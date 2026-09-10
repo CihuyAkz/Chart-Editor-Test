@@ -1,0 +1,12 @@
+FNF ROOT LAYOUT
+
+assets/ is the supplied FNF asset root.
+Expected top-level asset directories:
+  assets/data/
+  assets/images/
+  assets/music/
+  assets/scripts/
+  assets/shared/
+  assets/sounds/
+
+Do not create assets/assets/.

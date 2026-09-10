@@ -1,98 +1,516 @@
-<!DOCTYPE html>
-<html lang="id">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ChartLab &mdash; Chart Editor</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chart Editor — V-Slice Web Port</title>
+<link rel="stylesheet" href="styles/editor.css">
 
-<link rel="stylesheet" href="css/variables.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/menubar.css">
-<link rel="stylesheet" href="css/grid.css">
-<link rel="stylesheet" href="css/playbar.css">
+<script>window.FNF_ASSET_ROOT="./assets/";</script>
 </head>
-<body>
+<body data-theme="fnf">
+<!-- Canonical FNF asset root: ./assets/ (data/, images/, music/, scripts/, shared/, sounds/) -->
+<div class="app">
+  <div class="menubar" id="menubar">
+    <div class="menu"><button data-menu="file">File</button><div class="dropdown">
+      <div class="mi" data-act="new">New Chart <span class="sc">Ctrl+N</span></div>
+      <div class="mi" data-act="open">Open Chart… <span class="sc">Ctrl+O</span></div>
+      <div class="mi" data-act="save">Save Chart <span class="sc">Ctrl+S</span></div>
+      <div class="mi" data-act="saveas">Save Chart As… <span class="sc">Ctrl+Shift+S</span></div>
+      <div class="sep"></div>
+      <div class="mi" data-act="importEvents">Import Events…</div>
+      <div class="mi" data-act="exportEvents">Export Events…</div>
+      <div class="sep"></div>
+      <div class="mi" data-act="close">Close</div>
+    </div></div>
+    <div class="menu"><button data-menu="edit">Edit</button><div class="dropdown">
+      <div class="mi" data-act="undo">Undo <span class="sc">Ctrl+Z</span></div>
+      <div class="mi" data-act="redo">Redo <span class="sc">Ctrl+Y</span></div>
+      <div class="sep"></div>
+      <div class="mi" data-act="cut">Cut <span class="sc">Ctrl+X</span></div>
+      <div class="mi" data-act="copy">Copy <span class="sc">Ctrl+C</span></div>
+      <div class="mi" data-act="paste">Paste <span class="sc">Ctrl+V</span></div>
+      <div class="mi" data-act="pasteUnsnapped">Paste Unsnapped <span class="sc">Ctrl+Shift+V</span></div>
+      <div class="sep"></div>
+      <div class="mi" data-act="mirrorX">Mirror Notes — X Axis <span class="sc">Ctrl+Shift+M</span></div>
+      <div class="mi" data-act="mirrorY">Mirror Notes — Y Axis <span class="sc">Ctrl+Alt+M</span></div>
+      <div class="mi" data-act="mirrorXY">Mirror Notes — XY Axis</div>
+      <div class="mi" data-act="flipStrum">Flip Within Strumline</div>
+      <div class="sep"></div>
+      <div class="mi" data-act="selectAll">Select All <span class="sc">Ctrl+A</span></div>
+      <div class="mi" data-act="selectInverse">Select Inverse <span class="sc">Ctrl+I</span></div>
+      <div class="mi" data-act="selectNone">Select None <span class="sc">Ctrl+D</span></div>
+      <div class="mi" data-act="selectBefore">Select Before Playhead <span class="sc">Shift+Home</span></div>
+      <div class="mi" data-act="selectAfter">Select After Playhead <span class="sc">Shift+End</span></div>
+      <div class="sep"></div>
+      <div class="mi" data-act="removeStacked">Remove Stacked Notes</div>
+      <div class="mi" data-act="snapDown">Decrease Note Snap Precision</div>
+      <div class="mi" data-act="snapUp">Increase Note Snap Precision</div>
+    </div></div>
+    <div class="menu"><button data-menu="view">View</button><div class="dropdown">
+      <div class="mi" data-act="toggleDownscroll">Downscroll <span id="markDown">□</span></div>
+      <div class="mi" data-act="toggleIndicators">Note Kind Indicators <span id="markIndicators">☑</span></div>
+      <div class="mi" data-act="toggleSubtitles">Subtitles <span id="markSubtitles">□</span></div>
+      <div class="mi" data-act="toggleWaveforms">Waveforms <span id="markWave">□</span></div>
+      <div class="sep"></div>
+      <div class="mi" data-act="diffUp">Increase Difficulty <span class="sc">Ctrl+→</span></div>
+      <div class="mi" data-act="diffDown">Decrease Difficulty <span class="sc">Ctrl+←</span></div>
+      <div class="sep"></div>
+      <div class="mi" data-act="tbDifficulty">Difficulty Toolbox</div>
+      <div class="mi" data-act="tbMetadata">Metadata Toolbox</div>
+      <div class="mi" data-act="tbOffsets">Offsets Toolbox</div>
+      <div class="mi" data-act="tbNote">Note Data Toolbox</div>
+      <div class="mi" data-act="tbEvent">Event Data Toolbox</div>
+      <div class="mi" data-act="tbFreeplay">Freeplay Toolbox</div>
+      <div class="mi" data-act="tbPlaytest">Playtest Properties</div>
+      <div class="mi" data-act="tbPlayer">Player Preview</div>
+      <div class="mi" data-act="tbOpponent">Opponent Preview</div>
+    </div></div>
+    <div class="menu"><button data-menu="audio">Audio</button><div class="dropdown">
+      <div class="mi" data-act="playPause">Play/Pause <span class="sc">Space</span></div>
+      <div class="mi" data-act="stop">Stop</div>
+      <div class="mi" data-act="loadInst">Load Instrumental…</div>
+      <div class="mi" data-act="loadVocals">Load Vocals…</div>
+      <div class="mi" data-act="metronome">Metronome</div>
+      <div class="mi" data-act="hitsounds">Hitsounds</div>
+    </div></div>
+    <div class="menu"><button data-menu="tools">Tools</button><div class="dropdown">
+      <div class="mi" data-act="addTempo">Add Time Change</div>
+      <div class="mi" data-act="removeTempo">Remove Time Change</div>
+      <div class="mi" data-act="jsonDump">Show Current JSON</div>
+    </div></div>
+  </div>
 
-<!-- ====== MENU BAR ====== -->
-<header id="menubar">
-  <nav id="menu-items">
-    <button class="menu-item">File</button>
-    <button class="menu-item">Edit</button>
-    <button class="menu-item">View</button>
-    <button class="menu-item active">Audio</button>
-    <button class="menu-item">Test</button>
-    <button class="menu-item">Window</button>
-    <button class="menu-item">Help</button>
-  </nav>
-  <div id="prototype-warning">PROTOTYPE Functionality is subject to change.</div>
-</header>
-
-<!-- ====== MAIN WORKSPACE ====== -->
-<main id="workspace">
-
-  <!-- Waveform / timeline column -->
-  <section id="waveform-panel">
-    <canvas id="waveform-main"></canvas>
-  </section>
-
-  <!-- Chart grid area -->
-  <section id="chart-panel">
-
-    <div id="lane-headers">
-      <div id="ruler-spacer"></div>
-      <div class="char-icon" id="icon-opponent">
-        <img src="assets/icons/icon-darnell.png" alt="Opponent icon">
-      </div>
-      <div class="lane-header-name" id="name-opponent">Darnell</div>
-      <div class="lane-header-name" id="name-player">Pico (Playable)</div>
-      <div class="char-icon" id="icon-player">
-        <img src="assets/icons/icon-pico.png" alt="Player icon">
-      </div>
-      <div id="header-fill"></div>
+  <div class="main">
+    <canvas id="chartCanvas"></canvas>
+    <div class="legend">
+      <span class="pill">◀ Opponent</span><span class="pill">◆ Events</span><span class="pill">Player ▶</span>
     </div>
-
-    <div id="grid-scroll">
-      <div id="grid-rail">
-        <div id="beat-ruler"></div>
-        <div id="playhead"></div>
-        <div id="note-grid"></div>
-      </div>
-    </div>
-
-  </section>
-
-</main>
-
-<!-- ====== PLAYBACK BAR ====== -->
-<footer id="playbar">
-  <div id="time-readout">
-    <span id="time-display">00:00.00</span>
-    <span id="beat-display">Beat: 0.00</span>
-    <span id="step-display">Step: 0</span>
+    <button class="waveToggle" id="waveToggle">Waveforms: OFF</button>
+    <div class="toolboxLayer" id="toolboxLayer"></div>
   </div>
 
-  <div id="transport-controls">
-    <button id="btn-first" title="Ke awal chart">|&lt;</button>
-    <button id="btn-back" title="Mundur">&lt;&lt;</button>
-    <button id="btn-play" title="Play / Pause">&gt;</button>
-    <button id="btn-fwd" title="Maju">&gt;&gt;</button>
-    <button id="btn-last" title="Ke akhir chart">&gt;|</button>
+  <div class="playbar">
+    <button id="playBtn">▶</button><button id="stopBtn">■</button>
+    <span class="readout" id="timeRead">0 ms</span>
+    <span class="readout" id="stepRead">Step 0</span>
+    <span class="readout" id="snapRead">1/16</span>
+    <div class="slider"><input id="timeline" type="range" min="0" max="10000" value="0" step="1"></div>
+    <button id="followBtn">Follow: OFF</button>
+    <button id="downBtn">Downscroll: OFF</button>
   </div>
+</div>
 
-  <div id="playbar-meta">
-    <span id="difficulty-display">Normal</span>
-    <span id="bpm-display">BPM: 182</span>
-    <span id="snap-display">1/16</span>
-    <span id="offset-display">-02:00</span>
-  </div>
-</footer>
+<div class="toast" id="toast"></div>
+<div class="context" id="context"></div>
+<input type="file" id="fileOpen" hidden accept=".fnfc,.zip,.json,application/json">
+<input type="file" id="fileEvents" hidden accept=".json,application/json">
+<input type="file" id="fileInst" hidden accept="audio/*">
+<input type="file" id="fileVocals" hidden accept="audio/*">
+<audio id="instAudio" preload="auto"></audio>
+<audio id="vocalsAudio" preload="auto"></audio>
 
-<script src="js/config.js"></script>
-<script src="js/state.js"></script>
-<script src="js/chartData.js"></script>
-<script src="js/waveform.js"></script>
-<script src="js/grid.js"></script>
-<script src="js/playback.js"></script>
-<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="system/paths.js"></script>
+<script src="system/editor.js"></script>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id), canvas=$("chartCanvas"), ctx=canvas.getContext("2d");
+const GRID=40, MENU=32, NOTE_ROW=32, PAD=4, PLAYBAR=48, COLS=9, STRUM=4, EVENT_COL=8;
+const SNAP_QUANTS=[4,8,12,16,20,24,32,48,64,96,192], BASE_SNAP=3;
+
+const S={
+  songId:"new-song",songName:"New Chart",artist:"Unknown",charter:"",
+  variation:"default",difficulty:"normal",difficulties:["easy","normal","hard"],
+  scrollSpeed:1,timeOffset:0,bpm:100,
+  metadata:null,manifest:null,
+  notes:{easy:[],normal:[],hard:[]},events:[],timeChanges:[{t:0,bpm:100,n:4,d:4,bt:[4,4,4,4]}],
+  selected:new Set(), selectedEvents:new Set(), anchorStep:0, playheadMs:0, scrollStep:0,
+  zoom:1, snapIndex:BASE_SNAP, downscroll:false, indicators:true, subtitles:false, waveforms:false,
+  metronome:false,hitsounds:true,follow:false,playing:false,clipboard:null,history:[],future:[],
+  mode:"place", noteKind:"", noteParams:[],
+  toolboxes:{}
+};
+
+function clone(x){return JSON.parse(JSON.stringify(x))}
+function toast(s){const t=$("toast");t.textContent=s;t.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove("show"),1800)}
+function currentNotes(){if(!S.notes[S.difficulty])S.notes[S.difficulty]=[];return S.notes[S.difficulty]}
+function stepPerMsAt(ms){
+  let bpm=S.timeChanges[0]?.bpm||S.bpm, prev=0;
+  for(let i=1;i<S.timeChanges.length;i++){const tc=S.timeChanges[i];if(ms<tc.t)break;prev=tc.t;bpm=tc.bpm}
+  return bpm*4/60000;
+}
+function stepAt(ms){
+  let result=0, prev=0, bpm=S.timeChanges[0]?.bpm||S.bpm;
+  const tcs=[...S.timeChanges].sort((a,b)=>a.t-b.t);
+  for(let i=1;i<tcs.length;i++){
+    const tc=tcs[i]; if(ms<=tc.t)break;
+    result+=(tc.t-prev)*bpm*4/60000;prev=tc.t;bpm=tc.bpm;
+  }
+  result+=Math.max(0,ms-prev)*bpm*4/60000;
+  return result;
+}
+function msAtStep(step){
+  let remain=step,prev=0,bpm=S.timeChanges[0]?.bpm||S.bpm;
+  const tcs=[...S.timeChanges].sort((a,b)=>a.t-b.t);
+  for(let i=1;i<tcs.length;i++){
+    const tc=tcs[i],seg=(tc.t-prev)*bpm*4/60000;
+    if(remain<=seg)return prev+remain*60000/(bpm*4);
+    remain-=seg;prev=tc.t;bpm=tc.bpm;
+  }
+  return prev+remain*60000/(bpm*4);
+}
+function snapStep(step){
+  const div=SNAP_QUANTS[S.snapIndex];
+  const unit=16/div;
+  return Math.round(step/unit)*unit;
+}
+function screenStepToMs(y){
+  const usable=Math.max(0,y-(MENU+NOTE_ROW+PAD));
+  let step=S.scrollStep+usable/(GRID*S.zoom);
+  if(S.downscroll){
+    const h=canvas.height/devicePixelRatio;
+    step=S.scrollStep+(h-(y-(MENU+NOTE_ROW+PAD)))/(GRID*S.zoom);
+  }
+  return msAtStep(Math.max(0,snapStep(step)));
+}
+function stepToY(step){
+  const h=canvas.height/devicePixelRatio;
+  const rel=(step-S.scrollStep)*GRID*S.zoom;
+  return S.downscroll ? h-PLAYBAR-rel : MENU+NOTE_ROW+PAD+rel;
+}
+function laneToX(col){
+  const w=canvas.width/devicePixelRatio;
+  const gridW=COLS*GRID;
+  return Math.round((w-gridW)/2)+col*GRID;
+}
+function resize(){
+  const d=devicePixelRatio||1,w=innerWidth,h=innerHeight-22;
+  canvas.width=w*d;canvas.height=h*d;canvas.style.width=w+"px";canvas.style.height=h+"px";
+  ctx.setTransform(d,0,0,d,0,0);draw();
+}
+function noteColumn(data){
+  // Source's noteDataToGridColumn behavior is a strumline flip: player/opponent are visually swapped.
+  if(data<STRUM)return data+STRUM;
+  if(data<STRUM*2)return data-STRUM;
+  return EVENT_COL;
+}
+function gridDataFromColumn(col){
+  if(col<STRUM)return col+STRUM;
+  if(col<STRUM*2)return col-STRUM;
+  return EVENT_COL;
+}
+function noteDirGlyph(d){return ["←","↓","↑","→"][d%4]||"?"}
+function selectedNote(i){return S.selected.has(i)}
+
+function draw(){
+  const d=devicePixelRatio||1,w=canvas.width/d,h=canvas.height/d;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle="#111113";ctx.fillRect(0,0,w,h);
+  const x0=Math.round((w-COLS*GRID)/2);
+  // header & note selection row
+  ctx.fillStyle="#2c2c31";ctx.fillRect(0,0,w,MENU);
+  ctx.fillStyle="#17171a";ctx.fillRect(0,MENU,w,NOTE_ROW+PAD);
+  for(let c=0;c<COLS;c++){
+    const x=x0+c*GRID;
+    ctx.fillStyle=c===EVENT_COL?"#282118":(c<4?"#18181c":"#1a181d");
+    ctx.fillRect(x,MENU+NOTE_ROW+PAD,GRID,h-MENU-NOTE_ROW-PAD);
+    ctx.strokeStyle=c===EVENT_COL?"#6b5a2a":"#37373e";ctx.strokeRect(x+.5,MENU+NOTE_ROW+PAD+.5,GRID,h-MENU-NOTE_ROW-PAD-PLAYBAR);
+    ctx.fillStyle="#aaa";ctx.font="11px system-ui";ctx.textAlign="center";
+    ctx.fillText(c===EVENT_COL?"EVENT":noteDirGlyph(c<4?c:c-4),x+GRID/2,MENU+21);
+  }
+  // grid ticks
+  const top=Math.floor(S.scrollStep)-1,bottom=Math.ceil(S.scrollStep+(h-MENU-NOTE_ROW-PAD-PLAYBAR)/(GRID*S.zoom))+2;
+  for(let s=top;s<=bottom;s++){
+    const y=stepToY(s); if(y<32||y>h-PLAYBAR)continue;
+    const measure=s%16===0,beat=s%4===0;
+    ctx.strokeStyle=measure?"#4a4a53":beat?"#34343b":"#24242a";ctx.lineWidth=measure?1.4:1;
+    ctx.beginPath();ctx.moveTo(x0,y+.5);ctx.lineTo(x0+COLS*GRID,y+.5);ctx.stroke();
+    if(beat){ctx.fillStyle="#7f7f88";ctx.font="10px ui-monospace";ctx.textAlign="right";ctx.fillText(String((s/4)|0),x0-6,y-3)}
+  }
+  // event column stripe
+  ctx.fillStyle="#f59e0b14";ctx.fillRect(x0+EVENT_COL*GRID,MENU+NOTE_ROW+PAD,GRID,h-MENU-NOTE_ROW-PAD-PLAYBAR);
+  // notes
+  currentNotes().forEach((n,i)=>{
+    const col=noteColumn(n.d),y=stepToY(stepAt(n.t)),hh=Math.max(8,stepDuration(n)*GRID*S.zoom);
+    if(y<-hh||y>h) return;
+    const x=laneToX(col)+4,ww=GRID-8;
+    if(selectedNote(i)){ctx.fillStyle="#ffffff";ctx.fillRect(x-2,y-2,ww+4,Math.max(GRID,hh)+4)}
+    ctx.fillStyle=(n.d<4)?"#73c7ff":"#b26bff";
+    ctx.fillRect(x,y,ww,Math.max(10,hh));
+    if(n.length>0){ctx.fillStyle=(n.d<4)?"#5ba9db":"#8a52c4";ctx.fillRect(x+ww*.38,y+GRID/2,ww*.24,Math.max(2,hh-GRID/2))}
+    ctx.fillStyle="#101014";ctx.font="bold 15px system-ui";ctx.textAlign="center";ctx.fillText(noteDirGlyph(n.d),x+ww/2,y+17);
+    if(S.indicators&&n.k){ctx.fillStyle="#ffcf43";ctx.beginPath();ctx.arc(x+ww-6,y+6,4,0,Math.PI*2);ctx.fill();}
+  });
+  // events
+  S.events.forEach((e,i)=>{
+    const y=stepToY(stepAt(e.t)); if(y<24||y>h-PLAYBAR)return;
+    const x=laneToX(EVENT_COL)+GRID/2;
+    ctx.fillStyle=S.selectedEvents.has(i)?"#fff":"#ffcf43";ctx.beginPath();ctx.moveTo(x,y-7);ctx.lineTo(x+7,y);ctx.lineTo(x,y+7);ctx.lineTo(x-7,y);ctx.closePath();ctx.fill();
+    ctx.fillStyle="#171719";ctx.font="bold 9px system-ui";ctx.textAlign="center";ctx.fillText("E",x,y+3);
+  });
+  // playhead scroll strip
+  ctx.fillStyle="#682b2f";ctx.fillRect(x0-GRID,MENU+NOTE_ROW+PAD,GRID,Math.max(0,h-MENU-NOTE_ROW-PAD-PLAYBAR));
+  const py=stepToY(stepAt(S.playheadMs));ctx.strokeStyle="#bd0231";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x0-GRID,py+.5);ctx.lineTo(x0+(COLS)*GRID,py+.5);ctx.stroke();
+  ctx.fillStyle="#bd0231";ctx.fillRect(x0-GRID,py-4,GRID,8);
+  // top labels
+  ctx.fillStyle="#ddd";ctx.font="12px system-ui";ctx.textAlign="left";ctx.fillText(`${S.songName} — ${S.difficulty} — ${S.variation}`,10,21);
+  ctx.fillStyle="#aaa";ctx.textAlign="right";ctx.fillText(`${currentNotes().length} Notes • ${S.events.length} Events`,w-10,21);
+  $("timeRead").textContent=(S.playheadMs|0)+" ms";$("stepRead").textContent="Step "+stepAt(S.playheadMs).toFixed(3);
+  $("snapRead").textContent="1/"+SNAP_QUANTS[S.snapIndex];
+  $("waveToggle").textContent="Waveforms: "+(S.waveforms?"ON":"OFF");
+  $("followBtn").textContent="Follow: "+(S.follow?"ON":"OFF");
+  $("downBtn").textContent="Downscroll: "+(S.downscroll?"ON":"OFF");
+}
+function stepDuration(n){return n.length>0?Math.max(.1,stepAt(n.t+n.length)-stepAt(n.t)):1}
+
+function snapshot(){S.history.push({notes:clone(S.notes),events:clone(S.events),timeChanges:clone(S.timeChanges)});if(S.history.length>80)S.history.shift();S.future=[]}
+function undo(){if(!S.history.length)return;S.future.push({notes:clone(S.notes),events:clone(S.events),timeChanges:clone(S.timeChanges)});const x=S.history.pop();S.notes=x.notes;S.events=x.events;S.timeChanges=x.timeChanges;S.selected.clear();S.selectedEvents.clear();draw();toast("Undo")}
+function redo(){if(!S.future.length)return;S.history.push({notes:clone(S.notes),events:clone(S.events),timeChanges:clone(S.timeChanges)});const x=S.future.pop();S.notes=x.notes;S.events=x.events;S.timeChanges=x.timeChanges;draw();toast("Redo")}
+
+function addNote(col,time){
+  const data=gridDataFromColumn(col);if(data>=8)return;
+  snapshot();const n={t:Math.max(0,time),d:data,l:0};
+  if(S.noteKind)n.k=S.noteKind;if(S.noteParams.length)n.p=clone(S.noteParams);
+  currentNotes().push(n);currentNotes().sort((a,b)=>a.t-b.t||a.d-b.d);draw();toast("Note added")
+}
+function addEvent(time){
+  snapshot();S.events.push({t:Math.max(0,time),e:"FocusCamera",v:{target:"bf"}});S.events.sort((a,b)=>a.t-b.t);draw();toast("Event added")
+}
+function hitTest(mx,my){
+  let best={type:null,i:-1};
+  for(let i=currentNotes().length-1;i>=0;i--){
+    const n=currentNotes()[i],col=noteColumn(n.d),x=laneToX(col),y=stepToY(stepAt(n.t)),hh=Math.max(GRID,stepDuration(n)*GRID*S.zoom);
+    if(mx>=x&&mx<=x+GRID&&my>=y&&my<=y+hh){best={type:"note",i};break}
+  }
+  if(best.type)return best;
+  for(let i=S.events.length-1;i>=0;i--){const e=S.events[i],y=stepToY(stepAt(e.t)),x=laneToX(EVENT_COL);if(mx>=x&&mx<=x+GRID&&Math.abs(my-y)<10)return {type:"event",i}}
+  return best;
+}
+function applyNoteMutation(n,obj){
+  Object.assign(n,obj); if(n.length<0)n.length=0;
+}
+function openToolbox(name,x=18,y=56){
+  const key=name;let tb=S.toolboxes[key];
+  if(!tb){
+    tb=document.createElement("div");tb.className="toolbox";tb.style.left=x+"px";tb.style.top=y+"px";
+    tb.innerHTML=`<div class="tbhead"><span>${titleCase(name)}</span><button>✕</button></div><div class="tbbody"></div>`;
+    $("toolboxLayer").appendChild(tb);S.toolboxes[key]=tb;tb.querySelector("button").onclick=()=>tb.classList.remove("open");fillToolbox(name,tb.querySelector(".tbbody"));
+  }
+  tb.classList.add("open")
+}
+function titleCase(s){return s.replace(/([A-Z])/g," $1").replace(/^./,x=>x.toUpperCase())}
+function fillToolbox(name,b){
+  if(name==="difficulty")b.innerHTML=`
+    <div class="field"><label>Variation</label><select id="tbVariation"><option>default</option></select></div>
+    <div class="field"><label>Difficulty</label><select id="tbDiff"></select></div>
+    <div class="field"><label>Scroll Speed</label><input id="tbSpeed" type="number" step=".05"></div>
+    <button id="tbAddDiff">Add Difficulty</button>`;
+  else if(name==="metadata")b.innerHTML=`
+    <div class="field"><label>Song ID</label><input id="tbSongId"></div>
+    <div class="field"><label>Song Name</label><input id="tbSongName"></div>
+    <div class="row"><div class="col field"><label>Artist</label><input id="tbArtist"></div><div class="col field"><label>Charter</label><input id="tbCharter"></div></div>
+    <div class="row"><div class="col field"><label>Player</label><input id="tbPlayer" value="bf"></div><div class="col field"><label>Opponent</label><input id="tbOpponent" value="dad"></div></div>
+    <div class="field"><label>Girlfriend</label><input id="tbGirlfriend" value="gf"></div>`;
+  else if(name==="offsets")b.innerHTML=`
+    <div class="field"><label>Instrumental Offset (ms)</label><input id="tbInstOffset" type="number"></div>
+    <div class="field"><label>Player Vocal Offset (ms)</label><input id="tbPlayerOff" type="number"></div>
+    <div class="field"><label>Opponent Vocal Offset (ms)</label><input id="tbOppOff" type="number"></div>`;
+  else if(name==="noteData")b.innerHTML=`
+    <div class="field"><label>Selected Note Time (ms)</label><input id="tbNT" type="number"></div>
+    <div class="field"><label>Data / Lane (0-7)</label><input id="tbND" type="number" min="0" max="7"></div>
+    <div class="field"><label>Length (ms)</label><input id="tbNL" type="number" min="0"></div>
+    <div class="field"><label>Kind</label><input id="tbNK"></div>
+    <div class="field"><label>Params (JSON)</label><textarea id="tbNP">[]</textarea></div>
+    <button id="tbApplyNote">Apply Selected Note</button>`;
+  else if(name==="eventData")b.innerHTML=`
+    <div class="field"><label>Event Kind</label><input id="tbEK" value="FocusCamera"></div>
+    <div class="field"><label>Event Value (JSON)</label><textarea id="tbEV">{"target":"bf"}</textarea></div>
+    <button id="tbApplyEvent">Apply Selected Event</button>`;
+  else if(name==="freeplay")b.innerHTML=`
+    <div class="field"><label>Preview Start (ms)</label><input id="tbPreviewStart" type="number" value="0"></div>
+    <div class="field"><label>Preview End (ms)</label><input id="tbPreviewEnd" type="number" value="0"></div>
+    <div class="field"><label>Album</label><input id="tbAlbum" value=""></div>`;
+  else if(name==="playtest")b.innerHTML=`
+    <div class="chk"><input type="checkbox" id="ptPractice">Practice Mode</div>
+    <div class="chk"><input type="checkbox" id="ptStart">Start From Playhead</div>
+    <div class="chk"><input type="checkbox" id="ptBot">Bot Play</div>
+    <div class="chk"><input type="checkbox" id="ptResults" checked>Show Results</div>
+    <div class="chk"><input type="checkbox" id="ptScripts" checked>Song Scripts</div>
+    <button id="ptLaunch">Playtest (web preview)</button>`;
+  else if(name==="player")b.innerHTML=`<div class="field"><label>Character</label><input id="tbCharP" value="bf"></div><div class="notice">Browser port preview placeholder. The Haxe game uses CharacterPlayer here.</div>`;
+  else if(name==="opponent")b.innerHTML=`<div class="field"><label>Character</label><input id="tbCharO" value="dad"></div><div class="notice">Browser port preview placeholder. The original editor uses a CharacterPlayer instance.</div>`;
+  else return;
+  bindToolbox(name,b)
+}
+function bindToolbox(name,b){
+  if(name==="difficulty"){
+    const vd=$("#tbVariation"),dd=$("#tbDiff"); S.difficulties.forEach(d=>{const o=document.createElement("option");o.value=d;o.textContent=d;dd.appendChild(o)});dd.value=S.difficulty;$("#tbSpeed").value=S.scrollSpeed;
+    dd.onchange=()=>{S.difficulty=dd.value;draw()};$("#tbSpeed").oninput=()=>S.scrollSpeed=+$("#tbSpeed").value||1;
+    $("#tbAddDiff").onclick=()=>{let d=prompt("Difficulty ID","erect");if(!d)return;if(!S.difficulties.includes(d)){S.difficulties.push(d);S.notes[d]=[];const o=document.createElement("option");o.value=d;o.textContent=d;dd.appendChild(o)}};
+  } else if(name==="metadata"){
+    $("#tbSongId").value=S.songId;$("#tbSongName").value=S.songName;$("#tbArtist").value=S.artist;$("#tbCharter").value=S.charter;
+    ["SongId","SongName","Artist","Charter"].forEach(k=>$("#tb"+k).oninput=()=>S[({SongId:"songId",SongName:"songName",Artist:"artist",Charter:"charter"}[k])]=($("#tb"+k).value));
+  } else if(name==="noteData"){
+    const i=[...S.selected][0]; if(i!=null)loadNoteTB(i);
+    $("#tbApplyNote").onclick=()=>{const i=[...S.selected][0];if(i==null)return; snapshot();const n=currentNotes()[i];try{n.t=+$("#tbNT").value||0;n.d=Math.max(0,Math.min(7,+$("#tbND").value||0));n.length=Math.max(0,+$("#tbNL").value||0);const k=$("#tbNK").value.trim();k?n.k=k:delete n.k;const p=JSON.parse($("#tbNP").value||"[]");n.p=Array.isArray(p)?p:[]}catch{}draw()}
+  } else if(name==="eventData"){
+    const i=[...S.selectedEvents][0];if(i!=null)loadEventTB(i);
+    $("#tbApplyEvent").onclick=()=>{const i=[...S.selectedEvents][0];if(i==null)return;snapshot();const e=S.events[i];e.e=$("#tbEK").value.trim()||"Default";try{e.v=JSON.parse($("#tbEV").value)}catch{}draw()}
+  } else if(name==="playtest")$("#ptLaunch").onclick=()=>{S.playing=true;toast("Web preview started at playhead");};
+}
+function loadNoteTB(i){const n=currentNotes()[i];if(!n)return;$("#tbNT").value=n.t;$("#tbND").value=n.d;$("#tbNL").value=n.length||0;$("#tbNK").value=n.k||"";$("#tbNP").value=JSON.stringify(n.p||[],null,2)}
+function loadEventTB(i){const e=S.events[i];if(!e)return;$("#tbEK").value=e.e||"Default";$("#tbEV").value=JSON.stringify(e.v??null,null,2)}
+
+function exportEvents(){
+  download(new Blob([JSON.stringify({version:"2.0.0",events:S.events},null,2)],{type:"application/json"}),"events.json")
+}
+function download(blob,name){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function fnfcMetadata(){
+  const tcs=S.timeChanges.map(t=>({t:t.t,b:t.beatTime??Number(stepAt(t.t).toFixed(5)),bpm:t.bpm,n:t.n??4,d:t.d??4,bt:t.bt??[4,4,4,4]}));
+  return {
+    version:"2.1.0",songName:S.songName,artist:S.artist,
+    ...(S.charter?{charter:S.charter}:{}),
+    timeFormat:"ms",divisions:null,
+    offsets:{instrumental:S.timeOffset,altInstrumentals:{},vocals:{bf:0,dad:0},altVocals:{}},
+    timeChanges:tcs,looped:false,
+    playData:{
+      songVariations:[],difficulties:[...S.difficulties],
+      characters:{player:"bf",girlfriend:"gf",opponent:"dad",instrumental:"",altInstrumentals:[],opponentVocals:["dad"],playerVocals:["bf"]},
+      stage:"mainStage",noteStyle:"funkin",ratings:{},previewStart:0,previewEnd:0
+    },
+    generatedBy:"Funkin"
+  };
+}
+function fnfcChart(){
+  const notes={};for(const d of S.difficulties)notes[d]=clone(S.notes[d]||[]);
+  return {version:"2.1.0",scrollSpeed:Object.fromEntries(S.difficulties.map(d=>[d,d===S.difficulty?S.scrollSpeed:1])),events:clone(S.events),notes,generatedBy:"Funkin"};
+}
+async function exportFNFC(){
+  const id=(S.songId||"new-song").replace(/[\/\\:*?"<>|]/g,"").trim()||"new-song",z=new JSZip();
+  z.file("manifest.json",JSON.stringify({version:"1.0.0",songId:id},null,2));
+  z.file(`${id}-metadata.json`,JSON.stringify(fnfcMetadata(),null,2));
+  z.file(`${id}-chart.json`,JSON.stringify(fnfcChart(),null,2));
+  if($("instAudio").src && $("instAudio").src.startsWith("blob:")){}
+  const blob=await z.generateAsync({type:"blob",compression:"DEFLATE"});download(blob,`${id}.fnfc`);toast("FNFC exported")
+}
+async function importFile(file){
+  if(!file)return;
+  try{
+    if(file.name.toLowerCase().endsWith(".fnfc")||file.name.toLowerCase().endsWith(".zip")){
+      const z=await JSZip.loadAsync(await file.arrayBuffer()),items={};
+      for(const name of Object.keys(z.files))if(!z.files[name].dir){const low=name.toLowerCase();if(low.endsWith(".json")){try{items[name]=JSON.parse(await z.files[name].async("text"))}catch{}}}
+      const manifest=items["manifest.json"]||{};
+      let meta=items[`${manifest.songId}-metadata.json`];let chart=items[`${manifest.songId}-chart.json`];
+      if(!meta){const k=Object.keys(items).find(x=>/-metadata\.json$/i.test(x));meta=items[k]}
+      if(!chart){const k=Object.keys(items).find(x=>/-chart\.json$/i.test(x));chart=items[k]}
+      if(!chart)throw Error("Chart JSON not found");
+      loadMeta(meta||{});loadChart(chart);if(meta)S.songId=manifest.songId||S.songId;draw();toast(`Imported FNFC — ${currentNotes().length} notes`);
+    } else loadJson(JSON.parse(await file.text()));
+  }catch(e){toast("Import failed: "+e.message)}
+}
+function loadMeta(m){
+  S.songName=m.songName??S.songName;S.artist=m.artist??S.artist;S.charter=m.charter??"";
+  S.timeOffset=+(m.offsets?.instrumental??0);S.bpm=+(m.timeChanges?.[0]?.bpm??S.bpm);
+  S.timeChanges=(m.timeChanges||[]).map(t=>({t:+(t.t??0),beatTime:t.b??null,bpm:+(t.bpm??S.bpm),n:+(t.n??4),d:+(t.d??4),bt:t.bt??[4,4,4,4]}));
+  if(!S.timeChanges.length)S.timeChanges=[{t:0,bpm:S.bpm,n:4,d:4,bt:[4,4,4,4]}];
+  S.difficulties=[...(m.playData?.difficulties||S.difficulties)];S.difficulties.forEach(d=>S.notes[d]??=[]);
+}
+function loadChart(c){
+  S.events=(c.events||[]).map(e=>Array.isArray(e)?{t:+e[0],e:e[1],v:e[2]??null}:{t:+(e.t??0),e:e.e??"Default",v:e.v??null});
+  const diffs=Object.keys(c.notes||{});for(const d of diffs)S.notes[d]=(c.notes[d]||[]).map(n=>Array.isArray(n)?{t:+n[0],d:+n[1],l:+(n[2]||0)}:{t:+(n.t??0),d:+(n.d??0),l:+(n.l??0),...(n.k?{k:n.k}:{}),...(n.p?{p:n.p}: {})});
+  if(!S.difficulties.length)S.difficulties=diffs.length?diffs:["normal"];if(!S.difficulties.includes(S.difficulty))S.difficulty=S.difficulties[0];
+}
+function loadJson(o){
+  if(o.events && !o.notes && !o.playData){S.events=o.events.map(e=>Array.isArray(e)?{t:+e[0],e:e[1],v:e[2]??null}:e);draw();toast("Events imported");return}
+  if(o.song||o.notes?.length){ // legacy FNF
+    const song=o.song||o;S.songName=song.song||S.songName;S.bpm=+(song.bpm||S.bpm);S.notes[S.difficulty]=[];
+    for(const sec of (song.notes||[]))for(const n of (sec.sectionNotes||[])){S.notes[S.difficulty].push({t:+n[0],d:(+n[1]%4)+(sec.mustHitSection?0:4),l:+(n[2]||0)})}
+    draw();toast("Legacy FNF chart imported");return
+  }
+  if(o.notes||o.scrollSpeed||o.events){loadChart(o);draw();toast("Chart JSON imported");return}
+  throw Error("Unknown JSON format")
+}
+
+// Actions
+document.querySelectorAll(".menu>button").forEach(b=>b.onclick=e=>{const m=b.parentElement;document.querySelectorAll(".menu").forEach(x=>x!==m&&x.classList.remove("open"));m.classList.toggle("open")});
+document.addEventListener("click",e=>{if(!e.target.closest(".menu"))document.querySelectorAll(".menu").forEach(x=>x.classList.remove("open"));if(!e.target.closest(".context"))$("context").style.display="none"});
+document.querySelectorAll(".mi").forEach(mi=>mi.onclick=()=>{const a=mi.dataset.act;document.querySelectorAll(".menu").forEach(x=>x.classList.remove("open"));actions[a]?.()});
+const actions={
+new:()=>{location.reload()},open:()=>$("fileOpen").click(),save:()=>exportFNFC(),saveas:()=>exportFNFC(),
+importEvents:()=>$("fileEvents").click(),exportEvents,undo,redo,
+cut:()=>{copySelected();deleteSelected()},copy:copySelected,paste:()=>paste(false),pasteUnsnapped:()=>paste(true),
+mirrorX:()=>mirror(false,true),mirrorY:()=>mirror(true,false),mirrorXY:()=>mirror(true,true),flipStrum:()=>flipWithin(),
+selectAll:()=>{S.selected=new Set(currentNotes().map((_,i)=>i));S.selectedEvents=new Set(S.events.map((_,i)=>i));draw()},
+selectInverse:()=>{const n=new Set();currentNotes().forEach((_,i)=>{if(!S.selected.has(i))n.add(i)});S.selected=n;const e=new Set();S.events.forEach((_,i)=>{if(!S.selectedEvents.has(i))e.add(i)});S.selectedEvents=e;draw()},
+selectNone:()=>{S.selected.clear();S.selectedEvents.clear();draw()},
+selectBefore:()=>{const t=S.playheadMs;S.selected=new Set(currentNotes().map((n,i)=>n.t<=t?i:-1).filter(i=>i>=0));S.selectedEvents=new Set(S.events.map((e,i)=>e.t<=t?i:-1).filter(i=>i>=0));draw()},
+selectAfter:()=>{const t=S.playheadMs;S.selected=new Set(currentNotes().map((n,i)=>n.t>=t?i:-1).filter(i=>i>=0));S.selectedEvents=new Set(S.events.map((e,i)=>e.t>=t?i:-1).filter(i=>i>=0));draw()},
+removeStacked:()=>{snapshot();const seen=new Set();S.notes[S.difficulty]=currentNotes().filter(n=>{const k=n.t+"|"+n.d; if(seen.has(k))return false;seen.add(k);return true});draw();toast("Stacked notes removed")},
+snapDown:()=>{S.snapIndex=Math.max(0,S.snapIndex-1);draw()},snapUp:()=>{S.snapIndex=Math.min(SNAP_QUANTS.length-1,S.snapIndex+1);draw()},
+toggleDownscroll:()=>{S.downscroll=!S.downscroll;draw()},toggleIndicators:()=>{S.indicators=!S.indicators;draw()},toggleSubtitles:()=>{S.subtitles=!S.subtitles;draw()},toggleWaveforms:()=>{S.waveforms=!S.waveforms;draw()},
+diffUp:()=>changeDiff(1),diffDown:()=>changeDiff(-1),
+tbDifficulty:()=>openToolbox("difficulty",18,58),tbMetadata:()=>openToolbox("metadata",332,58),tbOffsets:()=>openToolbox("offsets",646,58),tbNote:()=>openToolbox("noteData",18,110),
+tbEvent:()=>openToolbox("eventData",332,110),tbFreeplay:()=>openToolbox("freeplay",646,110),tbPlaytest:()=>openToolbox("playtest",18,162),tbPlayer:()=>openToolbox("player",332,162),tbOpponent:()=>openToolbox("opponent",646,162),
+playPause:()=>togglePlay(),stop:()=>stopPlay(),loadInst:()=>$("fileInst").click(),loadVocals:()=>$("fileVocals").click(),metronome:()=>{S.metronome=!S.metronome;toast("Metronome "+(S.metronome?"ON":"OFF"))},hitsounds:()=>{S.hitsounds=!S.hitsounds;toast("Hitsounds "+(S.hitsounds?"ON":"OFF"))},
+addTempo:()=>{snapshot();S.timeChanges.push({t:S.playheadMs,bpm:S.bpm,n:4,d:4,bt:[4,4,4,4]});S.timeChanges.sort((a,b)=>a.t-b.t);draw();toast("Time change added")},
+removeTempo:()=>{if(S.timeChanges.length<=1)return;snapshot();let i=0,best=1;for(let j=1;j<S.timeChanges.length;j++){if(Math.abs(S.timeChanges[j].t-S.playheadMs)<Math.abs(S.timeChanges[best].t-S.playheadMs))best=j}S.timeChanges.splice(best,1);draw();toast("Time change removed")},
+jsonDump:()=>download(new Blob([JSON.stringify({metadata:fnfcMetadata(),chart:fnfcChart()},null,2)],{type:"application/json"}),"chart-debug.json"),
+close:()=>toast("Browser build: close the tab/window to exit.")
+};
+function changeDiff(dir){const i=S.difficulties.indexOf(S.difficulty);S.difficulty=S.difficulties[Math.max(0,Math.min(S.difficulties.length-1,i+dir))]||"normal";draw();toast("Difficulty: "+S.difficulty)}
+function copySelected(){const ns=[...S.selected].map(i=>clone(currentNotes()[i]));const es=[...S.selectedEvents].map(i=>clone(S.events[i]));if(!ns.length&&!es.length){toast("Nothing selected");return}const base=ns.length?Math.min(...ns.map(n=>n.t)):es.length?Math.min(...es.map(e=>e.t)):0;S.clipboard={notes:ns.map(n=>({...n,dt:n.t-base})),events:es.map(e=>({...e,dt:e.t-base}))};toast("Copied")}
+function deleteSelected(){snapshot();S.notes[S.difficulty]=currentNotes().filter((_,i)=>!S.selected.has(i));S.events=S.events.filter((_,i)=>!S.selectedEvents.has(i));S.selected.clear();S.selectedEvents.clear();draw();toast("Deleted")}
+function paste(unsnapped){if(!S.clipboard)return;const base=unsnapped?S.playheadMs:msAtStep(snapStep(stepAt(S.playheadMs)));snapshot();const nmap=S.clipboard.notes.map(n=>{const x=clone(n);delete x.dt;x.t=base+n.dt;return x});const emap=S.clipboard.events.map(e=>{const x=clone(e);delete x.dt;x.t=base+e.dt;return x});currentNotes().push(...nmap);S.events.push(...emap);currentNotes().sort((a,b)=>a.t-b.t);S.events.sort((a,b)=>a.t-b.t);draw();toast("Pasted")}
+function mirror(flipTime,flipLane){snapshot();for(const i of S.selected){const n=currentNotes()[i];if(flipLane)n.d=7-n.d;if(flipTime){const rel=stepAt(n.t)-stepAt(S.playheadMs);n.t=msAtStep(stepAt(S.playheadMs)-rel);}}draw()}
+function flipWithin(){snapshot();for(const i of S.selected){const n=currentNotes()[i];const base=n.d<4?0:4;n.d=base+(3-(n.d-base));}draw()}
+canvas.addEventListener("wheel",e=>{e.preventDefault();if(e.ctrlKey){S.zoom=Math.max(.5,Math.min(2.2,S.zoom*(e.deltaY<0?1.1:.9)))}else{S.scrollStep=Math.max(0,S.scrollStep+e.deltaY/40)}draw()},{passive:false});
+let drag=null;
+canvas.addEventListener("mousedown",e=>{
+  const r=canvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,h=hitTest(mx,my);
+  if(e.button===2){e.preventDefault();showContext(e.clientX,e.clientY,h);return}
+  if(my<MENU+NOTE_ROW+PAD){S.playheadMs=screenStepToMs(my);draw();return}
+  if(h.type==="note"){S.selected.clear();S.selectedEvents.clear();S.selected.add(h.i);draw();drag={kind:"note",i:h.i,startX:mx,startY:my,startT:currentNotes()[h.i].t,startD:currentNotes()[h.i].d};return}
+  if(h.type==="event"){S.selected.clear();S.selectedEvents.clear();S.selectedEvents.add(h.i);draw();drag={kind:"event",i:h.i,startY:my,startT:S.events[h.i].t};return}
+  const x0=Math.round((innerWidth-COLS*GRID)/2);const col=Math.floor((mx-x0)/GRID);if(col<0||col>=COLS)return;
+  const t=screenStepToMs(my);if(col===EVENT_COL)addEvent(t);else addNote(col,t)
+});
+canvas.addEventListener("mousemove",e=>{if(!drag)return;const r=canvas.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  if(drag.kind==="note"){const n=currentNotes()[drag.i];const x0=Math.round((innerWidth-COLS*GRID)/2);const col=Math.max(0,Math.min(7,Math.floor((mx-x0)/GRID)));n.d=gridDataFromColumn(col);n.t=screenStepToMs(my);draw()}
+  else if(drag.kind==="event"){S.events[drag.i].t=screenStepToMs(my);draw()}
+});
+window.addEventListener("mouseup",()=>{if(drag){snapshot();drag=null}});
+canvas.addEventListener("contextmenu",e=>e.preventDefault());
+function showContext(x,y,h){const c=$("context");c.style.left=x+"px";c.style.top=y+"px";c.innerHTML=(h.type==="note"?`<div class="mi" data-c="noteEdit">Edit Note</div><div class="mi" data-c="noteHold">Toggle Hold (200ms)</div><div class="mi" data-c="noteDelete">Delete</div>`:h.type==="event"?`<div class="mi" data-c="eventEdit">Edit Event</div><div class="mi" data-c="eventDelete">Delete</div>`:`<div class="mi" data-c="place">Place Note</div><div class="mi" data-c="placeEvent">Place Event</div>`);c.style.display="block";
+  c.querySelectorAll("[data-c]").forEach(mi=>mi.onclick=()=>{const a=mi.dataset.c;if(a==="noteEdit")openToolbox("noteData",18,110);if(a==="noteHold"){snapshot();currentNotes()[h.i].length=currentNotes()[h.i].length>0?0:200;draw()}if(a==="noteDelete"){snapshot();currentNotes().splice(h.i,1);draw()}if(a==="eventEdit")openToolbox("eventData",332,110);if(a==="eventDelete"){snapshot();S.events.splice(h.i,1);draw()}c.style.display="none"});
+}
+function togglePlay(){const a=$("instAudio");if(!a.src){toast("Load an instrumental first");return}if(a.paused){a.play();S.playing=true}else{a.pause();S.playing=false}draw()}
+function stopPlay(){const a=$("instAudio");a.pause();a.currentTime=0;S.playheadMs=0;S.playing=false;draw()}
+$("followBtn").onclick=()=>{S.follow=!S.follow;draw()};$("downBtn").onclick=()=>{S.downscroll=!S.downscroll;draw()};$("waveToggle").onclick=()=>{S.waveforms=!S.waveforms;draw()};
+$("playBtn").onclick=togglePlay;$("stopBtn").onclick=stopPlay;
+$("timeline").oninput=()=>{S.playheadMs=+$("timeline").value;draw()}
+$("fileOpen").onchange=e=>importFile(e.target.files[0]);
+$("fileEvents").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{loadJson(JSON.parse(await f.text()))}catch(x){toast(x.message)}e.target.value=""};
+$("fileInst").onchange=e=>{const f=e.target.files[0];if(f)$("instAudio").src=URL.createObjectURL(f)};$("fileVocals").onchange=e=>{const f=e.target.files[0];if(f)$("vocalsAudio").src=URL.createObjectURL(f)};
+$("instAudio").ontimeupdate=()=>{S.playheadMs=$("instAudio").currentTime*1000;if(S.follow)S.scrollStep=Math.max(0,stepAt(S.playheadMs)-8);$("timeline").max=Math.max(10000,Math.ceil($("instAudio").duration*1000||10000));$("timeline").value=S.playheadMs;draw()};
+document.onkeydown=e=>{
+  const tag=document.activeElement?.tagName;if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT")return;
+  const k=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&k==="z"){e.preventDefault();undo()} else if((e.ctrlKey||e.metaKey)&&k==="y"){e.preventDefault();redo()}
+  else if((e.ctrlKey||e.metaKey)&&k==="a"){e.preventDefault();actions.selectAll()}
+  else if((e.ctrlKey||e.metaKey)&&k==="c"){e.preventDefault();copySelected()}
+  else if((e.ctrlKey||e.metaKey)&&k==="x"){e.preventDefault();copySelected();deleteSelected()}
+  else if((e.ctrlKey||e.metaKey)&&k==="v"){e.preventDefault();paste(e.shiftKey)}
+  else if(e.key==="Delete"||e.key==="Backspace"){e.preventDefault();deleteSelected()}
+  else if(e.key===" "){e.preventDefault();togglePlay()}
+  else if(e.key==="ArrowUp"){S.scrollStep=Math.max(0,S.scrollStep-4);draw()}
+  else if(e.key==="ArrowDown"){S.scrollStep+=4;draw()}
+  else if(e.key==="ArrowLeft"&&(e.ctrlKey||e.metaKey)){changeDiff(-1)}
+  else if(e.key==="ArrowRight"&&(e.ctrlKey||e.metaKey)){changeDiff(1)}
+  else if(e.key==="Home"){S.playheadMs=0;draw()}else if(e.key==="End"){S.playheadMs=msAtStep(Math.max(0,stepAt(S.playheadMs)+32));draw()}
+}
+resize();addEventListener("resize",resize);
+setInterval(()=>{if(!S.playing)return; if(S.follow)draw()},100);
+</script>
 </body>
 </html>
