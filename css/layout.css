@@ -1,0 +1,71 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-app);
+  color: var(--text-bright);
+  font-family: var(--font-ui);
+  overflow: hidden;
+  user-select: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  background: var(--bg-panel);
+  position: relative;
+}
+
+/* subtle sketch-paper texture on the purple background, echoing the
+   reference screenshot's pencil-doodle backdrop, done in pure CSS
+   so no extra image asset is required */
+#workspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  background-image:
+    repeating-linear-gradient(115deg, #fff 0 2px, transparent 2px 40px),
+    repeating-linear-gradient(25deg, #fff 0 2px, transparent 2px 55px);
+}
+
+#waveform-panel {
+  width: var(--waveform-w);
+  flex-shrink: 0;
+  background: #3a3245;
+  border-right: 1px solid var(--line-strong);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 1;
+}
+
+/* baris kosong setinggi lane-headers, supaya waveform mulai sejajar
+   dengan baris pertama grid note (bukan ketiban header karakter) */
+#waveform-panel::before {
+  content: "";
+  display: block;
+  height: var(--lane-header-h);
+  flex-shrink: 0;
+}
+
+#chart-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  z-index: 1;
+}

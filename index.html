@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChartLab &mdash; Chart Editor</title>
+
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/menubar.css">
+<link rel="stylesheet" href="css/grid.css">
+<link rel="stylesheet" href="css/playbar.css">
+</head>
+<body>
+
+<!-- ====== MENU BAR ====== -->
+<header id="menubar">
+  <nav id="menu-items">
+    <button class="menu-item">File</button>
+    <button class="menu-item">Edit</button>
+    <button class="menu-item">View</button>
+    <button class="menu-item active">Audio</button>
+    <button class="menu-item">Test</button>
+    <button class="menu-item">Window</button>
+    <button class="menu-item">Help</button>
+  </nav>
+  <div id="prototype-warning">PROTOTYPE Functionality is subject to change.</div>
+</header>
+
+<!-- ====== MAIN WORKSPACE ====== -->
+<main id="workspace">
+
+  <!-- Waveform / timeline column -->
+  <section id="waveform-panel">
+    <canvas id="waveform-main"></canvas>
+  </section>
+
+  <!-- Chart grid area -->
+  <section id="chart-panel">
+
+    <div id="lane-headers">
+      <div id="ruler-spacer"></div>
+      <div class="char-icon" id="icon-opponent">
+        <img src="assets/icons/icon-darnell.png" alt="Opponent icon">
+      </div>
+      <div class="lane-header-name" id="name-opponent">Darnell</div>
+      <div class="lane-header-name" id="name-player">Pico (Playable)</div>
+      <div class="char-icon" id="icon-player">
+        <img src="assets/icons/icon-pico.png" alt="Player icon">
+      </div>
+      <div id="header-fill"></div>
+    </div>
+
+    <div id="grid-scroll">
+      <div id="grid-rail">
+        <div id="beat-ruler"></div>
+        <div id="playhead"></div>
+        <div id="note-grid"></div>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- ====== PLAYBACK BAR ====== -->
+<footer id="playbar">
+  <div id="time-readout">
+    <span id="time-display">00:00.00</span>
+    <span id="beat-display">Beat: 0.00</span>
+    <span id="step-display">Step: 0</span>
+  </div>
+
+  <div id="transport-controls">
+    <button id="btn-first" title="Ke awal chart">|&lt;</button>
+    <button id="btn-back" title="Mundur">&lt;&lt;</button>
+    <button id="btn-play" title="Play / Pause">&gt;</button>
+    <button id="btn-fwd" title="Maju">&gt;&gt;</button>
+    <button id="btn-last" title="Ke akhir chart">&gt;|</button>
+  </div>
+
+  <div id="playbar-meta">
+    <span id="difficulty-display">Normal</span>
+    <span id="bpm-display">BPM: 182</span>
+    <span id="snap-display">1/16</span>
+    <span id="offset-display">-02:00</span>
+  </div>
+</footer>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/chartData.js"></script>
+<script src="js/waveform.js"></script>
+<script src="js/grid.js"></script>
+<script src="js/playback.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

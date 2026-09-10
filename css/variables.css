@@ -1,0 +1,35 @@
+:root {
+  /* base editor chrome */
+  --bg-app: #16151c;
+  --bg-menubar: #2a2833;
+  --bg-menubar-hover: #3a3745;
+  --bg-panel: #4b3f80;          /* the purple sketch-background area */
+  --bg-grid-track: #d9d9df;      /* light grey lane background */
+  --bg-grid-cell: #eeeef3;
+  --bg-grid-cell-alt: #e4e4ec;
+  --line-grid: #b9b9c4;
+  --line-strong: #232228;
+
+  --text-bright: #f2f2f5;
+  --text-dim: #a9a6b8;
+  --text-warning: #d9d3e0;
+
+  --accent-playhead: #e0263f;
+  --accent-selection: #ffce54;
+
+  /* note lane colors (standard FNF note colors) */
+  --note-left:  #c24b99;
+  --note-down:  #00e6f6;
+  --note-up:    #12c822;
+  --note-right: #f9393f;
+
+  --font-ui: "Segoe UI", "Noto Sans", Arial, sans-serif;
+  --font-mono: "Consolas", "Courier New", monospace;
+
+  --menubar-h: 28px;
+  --lane-header-h: 64px;
+  --playbar-h: 40px;
+  --cell-w: 46px;
+  --cell-h: 58px;
+  --waveform-w: 64px;
+}

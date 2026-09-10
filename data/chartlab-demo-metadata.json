@@ -1,0 +1,36 @@
+{
+  "version": "2.2.2",
+  "songName": "ChartLab Demo",
+  "artist": "ChartLab",
+  "timeFormat": "ms",
+  "timeChanges": [
+    {
+      "t": 0,
+      "bpm": 120
+    }
+  ],
+  "playData": {
+    "album": "chartlab",
+    "previewStart": 0,
+    "previewEnd": 15000,
+    "ratings": {
+      "easy": 1,
+      "normal": 3,
+      "hard": 5
+    },
+    "songVariations": [],
+    "difficulties": [
+      "easy",
+      "normal",
+      "hard"
+    ],
+    "characters": {
+      "player": "bf",
+      "girlfriend": "gf",
+      "opponent": "dad"
+    },
+    "stage": "mainStage",
+    "noteStyle": "funkin"
+  },
+  "generatedBy": "Funkin ChartLab (browser)"
+}

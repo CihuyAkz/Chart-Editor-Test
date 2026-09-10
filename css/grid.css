@@ -1,0 +1,159 @@
+#lane-headers {
+  height: var(--lane-header-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid var(--line-strong);
+  position: relative;
+}
+
+/* lebar ini harus sama dengan #beat-ruler di grid.css, supaya label
+   header berbaris pas di atas kolom lane yang sesuai di bawahnya */
+#ruler-spacer {
+  width: 28px;
+  flex-shrink: 0;
+}
+
+#header-fill {
+  flex: 1;
+}
+
+.char-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  border: 2px solid #100f14;
+  margin: 0 6px;
+}
+
+.char-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.lane-header-name {
+  width: calc(var(--cell-w) * 4);
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: .02em;
+}
+
+#grid-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+#grid-rail {
+  position: relative;
+  display: flex;
+  min-height: 100%;
+}
+
+#beat-ruler {
+  width: 28px;
+  flex-shrink: 0;
+  position: relative;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.ruler-mark {
+  position: absolute;
+  left: 0;
+  right: 4px;
+  text-align: right;
+  transform: translateY(-0.5em);
+}
+
+.ruler-tick {
+  position: absolute;
+  right: 0;
+  width: 6px;
+  height: 1px;
+  background: var(--text-dim);
+}
+
+#note-grid {
+  flex: 1;
+  display: flex;
+  position: relative;
+  background: var(--bg-grid-track);
+}
+
+.lane-group {
+  display: flex;
+  border-right: 3px solid var(--line-strong);
+}
+
+.lane-group:last-child {
+  border-right: none;
+}
+
+.lane-column {
+  width: var(--cell-w);
+  position: relative;
+  border-right: 1px solid var(--line-grid);
+}
+
+.lane-column:last-child {
+  border-right: none;
+}
+
+.grid-cell {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px solid var(--line-grid);
+  cursor: url("../assets/cursor/cursor-pointer.png") 4 4, pointer;
+}
+
+.grid-cell.beat-start {
+  border-bottom: 1px solid #97979f;
+}
+
+.grid-cell.bar-start {
+  border-bottom: 2px solid var(--line-strong);
+}
+
+.grid-cell:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.note {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.note svg {
+  width: 78%;
+  height: 78%;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.5));
+}
+
+#playhead {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-playhead);
+  box-shadow: 0 0 6px rgba(224,38,63,.8);
+  z-index: 5;
+  pointer-events: none;
+}
