@@ -1,0 +1,2 @@
+@media(pointer:coarse){button,select{min-height:44px}.ib{min-height:40px;min-width:40px}.in input[type=number],.in input[type=text]{min-height:42px}.in input[type=range]{height:32px}#foot button{min-height:40px}}
+@media(max-width:900px){#main{grid-template-columns:minmax(0,1fr)}aside{position:absolute;top:0;bottom:0;width:260px;z-index:5;box-shadow:0 0 20px #000a}#left{left:0}#right{right:0;width:290px}#app.hl #left,#app.hr #right{display:none}}

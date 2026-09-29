@@ -1,0 +1,37 @@
+:root{--bg:#120e1f;--pn:#1c1730;--rs:#2a2247;--ln:#3b3160;--tx:#efeaff;--dm:#a79dd0;--ac:#ff4f9a;--a2:#4fd1ff;--er:#ff7b7b;--ok:#7dffb0;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:14px "Trebuchet MS","Segoe UI",system-ui,sans-serif;overscroll-behavior:none}
+button,select,input,textarea{font:inherit;color:inherit}
+button{background:var(--rs);border:1px solid var(--ln);border-radius:6px;padding:0 12px;min-height:38px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--a2)}button:disabled{opacity:.4;cursor:default}
+button.pri{background:var(--ac);border-color:var(--ac);color:#1a0a14;font-weight:700}
+#save.ok{color:var(--ok)}#save.warn{color:#ffd166}
+:focus-visible{outline:2px solid var(--a2);outline-offset:1px}
+#app{display:grid;grid-template-rows:auto minmax(0,1fr) auto;height:100dvh}
+#bar{display:flex;gap:6px;padding:6px;background:var(--pn);border-bottom:1px solid var(--ln);overflow-x:auto;align-items:center}
+#bar button{flex:none;white-space:nowrap}
+#main{display:grid;grid-template-columns:var(--l,230px) minmax(0,1fr) var(--r,320px);min-height:0;position:relative}
+#app.hl{--l:0px}#app.hr{--r:0px}#app.hl #left,#app.hr #right{visibility:hidden;border:0}
+aside{background:var(--pn);overflow:auto;min-width:0}#left{border-right:1px solid var(--ln)}#right{border-left:1px solid var(--ln)}
+.vp{position:relative;min-width:0;min-height:0;background:#0f0c1a}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.acts{display:flex;gap:6px;padding:8px;flex-wrap:wrap}.acts button{flex:1}
+.row{padding:4px 6px;border-bottom:1px solid var(--ln);cursor:pointer}.row.on{background:var(--rs);box-shadow:inset 3px 0 var(--ac)}
+.top{display:flex;align-items:center;gap:2px}.nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+small{color:var(--dm)}.ib{min-height:32px;min-width:32px;padding:0;border:0;background:none}
+#tabs{display:flex;position:sticky;top:0;background:var(--pn);z-index:1}#tabs button{flex:1;border-radius:0;border-width:0 0 2px}#tabs [aria-selected=true]{border-color:var(--ac)}
+h3{margin:10px 8px 2px;color:var(--a2);font-size:14px}
+.f{display:grid;grid-template-columns:84px 1fr;gap:6px;align-items:center;padding:3px 8px}.in{display:flex;gap:4px;flex-wrap:wrap}
+.in input[type=number],.in input[type=text]{flex:1;min-width:0;background:#0f0c1a;border:1px solid var(--ln);border-radius:5px;padding:6px;min-height:34px}
+.in input[type=range]{flex-basis:100%;accent-color:var(--ac)}.hint{color:var(--dm);padding:8px;margin:0}
+#js{width:calc(100% - 16px);height:52vh;margin:8px;background:#0f0c1a;border:1px solid var(--ln);border-radius:6px;padding:8px;font:12px ui-monospace,Consolas,monospace;resize:vertical;tab-size:2}
+#jerr{margin:0 8px;min-height:1.3em}#jerr.er{color:var(--er)}#jerr.ok{color:var(--ok)}
+.asset{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--ln);cursor:pointer}.asset.on{background:var(--rs)}
+.asset img{width:44px;height:44px;object-fit:contain;background:repeating-conic-gradient(#2a2247 0 25%,#1c1730 0 50%) 0 0/12px 12px;border-radius:4px}.asset span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#foot{display:flex;gap:14px;align-items:center;padding:4px 10px;background:var(--pn);border-top:1px solid var(--ln);color:var(--dm);overflow-x:auto;white-space:nowrap}
+#foot select{background:var(--rs);border:1px solid var(--ln);border-radius:5px;min-height:30px}#foot button{min-height:30px}
+dialog{background:var(--pn);color:var(--tx);border:1px solid var(--ln);border-radius:10px;max-width:min(92vw,520px)}dialog::backdrop{background:#000a}
+#db{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;max-height:60vh;overflow:auto}
+.tree{margin:0;padding-left:18px;font:12px ui-monospace,Consolas,monospace}.tree .hit{color:var(--ok)}
+#toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:var(--rs);border:1px solid var(--a2);padding:10px 16px;border-radius:8px;max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s;z-index:200}
+#toast.show{opacity:1}#toast.err{border-color:var(--er)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}

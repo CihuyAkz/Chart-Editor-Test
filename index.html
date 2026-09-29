@@ -1,255 +1,40 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chart Editor — Funkin</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div id="app">
-
-  <!-- ===== TITLE BAR ===== -->
-  <div id="titlebar">
-    <div id="titlebar-left">
-      <span id="titlebar-name">Chart Editor</span>
-      <span id="titlebar-sub">— <span id="titlebar-song">Unknown</span> (<span id="titlebar-variation">default</span>-<span id="titlebar-difficulty">normal</span>) <span id="dirty-dot" class="hidden">●</span></span>
-    </div>
-    <div id="titlebar-right">
-      <button class="winbtn" id="btn-minimize" title="Minimize panel dock"><img src="assets/shared/images/ui/chart-editor/minimize.png" alt=""></button>
-      <button class="winbtn" id="btn-maximize" title="Maximize timeline"><img src="assets/shared/images/ui/chart-editor/maximize.png" alt=""></button>
-    </div>
-  </div>
-
-  <!-- ===== MENU BAR ===== -->
-  <div id="menubar">
-    <div class="menu" data-menu="file">
-      <span class="menu-label">File</span>
-      <div class="menu-drop">
-        <div class="menu-item" data-action="new">New Chart</div>
-        <div class="menu-sep"></div>
-        <div class="menu-item" data-action="open-fnfc">Open Chart (.fnfc)…</div>
-        <div class="menu-item" data-action="open-json">Open Chart Data (.json)…</div>
-        <div class="menu-sep"></div>
-        <div class="menu-item" data-action="save-fnfc">Export Chart (.fnfc)</div>
-        <div class="menu-item" data-action="save-json">Export Chart Data (.json)</div>
-        <div class="menu-sep"></div>
-        <div class="menu-item" data-action="load-inst">Import Instrumental…</div>
-        <div class="menu-item" data-action="load-voices">Import Vocals…</div>
-      </div>
-    </div>
-    <div class="menu" data-menu="edit">
-      <span class="menu-label">Edit</span>
-      <div class="menu-drop">
-        <div class="menu-item" data-action="undo">Undo <span class="kbd">Ctrl+Z</span></div>
-        <div class="menu-item" data-action="redo">Redo <span class="kbd">Ctrl+Y</span></div>
-        <div class="menu-sep"></div>
-        <div class="menu-item" data-action="select-all">Select All Notes <span class="kbd">Ctrl+A</span></div>
-        <div class="menu-item" data-action="delete-selected">Delete Selected <span class="kbd">Del</span></div>
-      </div>
-    </div>
-    <div class="menu" data-menu="chart">
-      <span class="menu-label">Chart</span>
-      <div class="menu-drop">
-        <div class="menu-item" data-action="add-difficulty">Add Difficulty…</div>
-        <div class="menu-item" data-action="add-variation">Add Variation…</div>
-        <div class="menu-item" data-action="add-bpm-change">Add BPM Change at Playhead</div>
-      </div>
-    </div>
-    <div class="menu" data-menu="view">
-      <span class="menu-label">View</span>
-      <div class="menu-drop">
-        <div class="menu-item" data-action="toggle-opponent">Toggle Opponent Strumline</div>
-        <div class="menu-item" data-action="toggle-waveform">Toggle Metronome Tick</div>
-      </div>
-    </div>
-    <div class="menu" data-menu="help">
-      <span class="menu-label">Help</span>
-      <div class="menu-drop">
-        <div class="menu-item" data-action="help-about">About this Editor</div>
-      </div>
-    </div>
-    <div id="menubar-status">
-      <span id="status-text">Ready.</span>
-    </div>
-  </div>
-
-  <!-- ===== MAIN BODY: left toolbox / timeline / right inspector ===== -->
-  <div id="body-wrap">
-
-    <!-- LEFT TOOLBOX -->
-    <div id="toolbox">
-      <div class="tool-group">
-        <div class="tool-group-label">Base Game</div>
-        <button class="tool-btn active" data-engine="base">Base Game</button>
-        <button class="tool-btn" data-engine="vslice">V-Slice</button>
-      </div>
-
-      <div class="tool-group">
-        <div class="tool-group-label">Tool</div>
-        <button class="tool-btn active" data-tool="place" title="Place / Select notes (Q)">Select / Place</button>
-        <button class="tool-btn" data-tool="erase" title="Erase notes (E)">Eraser</button>
-        <button class="tool-btn" data-tool="event" title="Place events (V)">Event</button>
-      </div>
-
-      <div class="tool-group">
-        <div class="tool-group-label">Snap</div>
-        <select id="snap-select">
-          <option value="4">1/4 step</option>
-          <option value="8">1/8 step</option>
-          <option value="12">1/12 step</option>
-          <option value="16" selected>1/16 step</option>
-          <option value="32">1/32 step</option>
-          <option value="48">1/48 step</option>
-        </select>
-      </div>
-
-      <div class="tool-group">
-        <div class="tool-group-label">Zoom</div>
-        <div class="zoom-row">
-          <button id="zoom-out">−</button>
-          <span id="zoom-val">100%</span>
-          <button id="zoom-in">+</button>
-        </div>
-      </div>
-
-      <div class="tool-group">
-        <div class="tool-group-label">Difficulty</div>
-        <select id="difficulty-select"></select>
-      </div>
-
-      <div class="tool-group">
-        <div class="tool-group-label">Variation</div>
-        <select id="variation-select"></select>
-      </div>
-
-      <div class="tool-group note-legend">
-        <div class="tool-group-label">Lanes</div>
-        <div class="legend-row"><span class="legend-swatch lane-0"></span>Left</div>
-        <div class="legend-row"><span class="legend-swatch lane-1"></span>Down</div>
-        <div class="legend-row"><span class="legend-swatch lane-2"></span>Up</div>
-        <div class="legend-row"><span class="legend-swatch lane-3"></span>Right</div>
-      </div>
-    </div>
-
-    <!-- CENTER TIMELINE -->
-    <div id="timeline-wrap">
-      <div id="timeline-header">
-        <div id="lane-headers-opponent" class="lane-headers"></div>
-        <div id="lane-headers-gap"></div>
-        <div id="lane-headers-player" class="lane-headers"></div>
-        <div id="event-header">Events</div>
-      </div>
-      <div id="timeline-scroll">
-        <div id="timeline-canvas-wrap">
-          <canvas id="grid-canvas"></canvas>
-          <div id="notes-layer"></div>
-          <div id="events-layer"></div>
-          <div id="playhead-line"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT INSPECTOR -->
-    <div id="inspector">
-      <div class="insp-tabs">
-        <button class="insp-tab active" data-panel="song">Song</button>
-        <button class="insp-tab" data-panel="note">Note</button>
-        <button class="insp-tab" data-panel="event">Event</button>
-      </div>
-
-      <div class="insp-panel" id="panel-song">
-        <label>Song Name<input id="f-songName" type="text" value="Unknown"></label>
-        <label>Artist<input id="f-artist" type="text" value="Unknown"></label>
-        <label>Charter<input id="f-charter" type="text" value=""></label>
-        <label>BPM (at playhead's time change)<input id="f-bpm" type="number" min="1" step="0.01" value="100"></label>
-        <label>Time Signature
-          <div class="row-2">
-            <input id="f-tsnum" type="number" min="1" value="4">
-            <input id="f-tsden" type="number" min="1" value="4">
-          </div>
-        </label>
-        <label>Scroll Speed<input id="f-scrollspeed" type="number" min="0.1" step="0.1" value="1.0"></label>
-        <label>Stage<input id="f-stage" type="text" value="stage"></label>
-        <label>Note Style<input id="f-notestyle" type="text" value="funkin"></label>
-        <div class="insp-sub">Characters</div>
-        <label>Player<input id="f-charPlayer" type="text" value="bf"></label>
-        <label>Opponent<input id="f-charOpponent" type="text" value="dad"></label>
-        <label>Girlfriend<input id="f-charGf" type="text" value="gf"></label>
-        <label class="checkrow"><input id="f-looped" type="checkbox"> Looped</label>
-        <button class="wide-btn" id="btn-apply-song">Apply</button>
-      </div>
-
-      <div class="insp-panel hidden" id="panel-note">
-        <div id="note-empty-msg">No note selected. Click a note on the grid to inspect it.</div>
-        <div id="note-fields" class="hidden">
-          <label>Time (ms)<input id="n-time" type="number" step="1"></label>
-          <label>Lane<input id="n-lane" type="number" min="0" max="7"></label>
-          <label>Sustain Length (ms)<input id="n-length" type="number" min="0" step="1"></label>
-          <label>Note Kind<input id="n-kind" type="text" placeholder="(default)"></label>
-          <button class="wide-btn danger" id="btn-delete-note">Delete Note</button>
-        </div>
-      </div>
-
-      <div class="insp-panel hidden" id="panel-event">
-        <div id="event-empty-msg">No event selected. Use the Event tool on the event lane, or click an existing marker.</div>
-        <div id="event-fields" class="hidden">
-          <label>Time (ms)<input id="e-time" type="number" step="1"></label>
-          <label>Event Kind
-            <select id="e-kind">
-              <option value="Default">Default</option>
-              <option value="FocusCamera">FocusCamera</option>
-              <option value="PlayAnimation">PlayAnimation</option>
-              <option value="BPMChange">BPM Change</option>
-              <option value="sserafimShow">sserafimShow</option>
-              <option value="sserafimSing">sserafimSing</option>
-              <option value="sserafimDark">sserafimDark</option>
-              <option value="sserafimLights">sserafimLights</option>
-              <option value="sserafimPulseLights">sserafimPulseLights</option>
-              <option value="sserafimKick">sserafimKick</option>
-              <option value="Custom">Custom…</option>
-            </select>
-          </label>
-          <label id="e-custom-wrap" class="hidden">Custom Kind<input id="e-kind-custom" type="text"></label>
-          <label>Value (JSON)<textarea id="e-value" rows="6" spellcheck="false"></textarea></label>
-          <button class="wide-btn" id="btn-apply-event">Apply</button>
-          <button class="wide-btn danger" id="btn-delete-event">Delete Event</button>
-        </div>
-        <div class="insp-sub">All Events</div>
-        <div id="event-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== BOTTOM PLAYBACK BAR ===== -->
-  <div id="playbar">
-    <button id="btn-play" title="Play / Pause (Space)">
-      <svg viewBox="0 0 24 24" id="play-icon"><polygon points="6,4 20,12 6,20"></polygon></svg>
-    </button>
-    <button id="btn-stop" title="Stop">
-      <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"></rect></svg>
-    </button>
-    <span id="time-display">00:00.00 / 00:00.00</span>
-    <div id="scrub-track">
-      <div id="scrub-fill"></div>
-      <img id="scrub-head" src="assets/shared/images/ui/chart-editor/playbar-head.png" alt="">
-    </div>
-    <label class="vol-row">Vol
-      <input id="vol-slider" type="range" min="0" max="1" step="0.01" value="0.8">
-    </label>
-  </div>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#120e1f"><title>FNF Stage Editor</title>
+<link rel="manifest" href="manifest.json"><link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<link rel="stylesheet" href="css/main.css"><link rel="stylesheet" href="css/mobile.css"><link rel="stylesheet" href="css/fullscreen.css">
+</head><body>
+<div id="gate" role="dialog" aria-modal="true" aria-labelledby="gt">
+<h1 id="gt">LANDSCAPE MODE REQUIRED</h1>
+<p>Put your device in landscape mode and enter fullscreen to continue.</p>
+<button id="gbtn" class="big">ENTER FULLSCREEN LANDSCAPE</button><p id="gnote" role="status"></p></div>
+<div id="app" inert>
+<header id="bar" role="toolbar" aria-label="Toolbar">
+<button id="tl" title="Toggle objects panel">Objects</button>
+<button id="new" title="New stage">New Stage</button><button id="open" title="Open .json / .fnfs / images">Open</button>
+<button id="save" class="ok" title="Save project locally (Ctrl+S)">Saved</button><button id="export" class="pri">Export</button>
+<button id="undo" aria-label="Undo" title="Undo (Ctrl+Z)">↶ Undo</button><button id="redo" aria-label="Redo" title="Redo (Ctrl+Y)">↷ Redo</button>
+<button id="play" title="Play preview (Space)">▶ Play Preview</button><button id="stop" title="Stop preview" disabled>■ Stop</button>
+<button id="fs" title="Fullscreen (F)">⛶ Fullscreen</button><button id="set" title="Settings">⚙ Settings</button>
+<button id="tr" title="Toggle inspector panel">Inspector</button></header>
+<main id="main">
+<aside id="left" aria-label="Stage objects"><div class="acts"><button id="addp" class="pri">+ ADD PROP</button><button id="addc" class="pri">+ ADD CHARACTER</button></div>
+<div id="list" role="listbox" aria-label="Objects"></div></aside>
+<section class="vp" id="vp"><canvas id="cv" tabindex="0" aria-label="Stage viewport"></canvas></section>
+<aside id="right" aria-label="Inspector"><div role="tablist" id="tabs"><button role="tab" data-t="vis" aria-selected="true">Visual</button><button role="tab" data-t="json">JSON</button><button role="tab" data-t="ast">Assets</button></div>
+<div class="tp" id="t-vis"><div id="insp"></div></div>
+<div class="tp" id="t-json" hidden><textarea id="js" spellcheck="false" aria-label="Stage JSON"></textarea><p id="jerr" role="status"></p>
+<div class="acts"><button id="jfmt">Format</button><button id="japp" class="pri">Apply</button><button id="jrst">Reset</button></div></div>
+<div class="tp" id="t-ast" hidden><div class="acts"><button id="upl">Upload images</button><button id="addsel" class="pri">Add to stage</button></div><div id="alist"></div></div></aside>
+</main>
+<footer id="foot"><span id="coord">x 0  y 0</span><span id="zoom">50%</span>
+<label>Snap <select id="snap"><option>1</option><option>5</option><option>10</option><option>25</option><option>50</option><option value="c">Custom…</option></select></label>
+<label><input type="checkbox" id="grid" checked> Grid</label><button id="fit">Fit</button></footer>
 </div>
-
-<!-- hidden file inputs -->
-<input type="file" id="file-open-fnfc" accept=".fnfc,.zip" class="hidden">
-<input type="file" id="file-open-json" accept=".json" class="hidden">
-<input type="file" id="file-inst" accept="audio/*" class="hidden">
-<input type="file" id="file-voices" accept="audio/*" class="hidden">
-
-<div id="toast-stack"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="app.js"></script>
-</body>
-</html>
+<dialog id="dlg"><form method="dialog"><h2 id="dt"></h2><div id="db"></div><button>Close</button></form></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="file" multiple hidden accept=".json,.fnfs,.zip,image/*">
+<script type="module" src="js/app.js"></script>
+</body></html>
