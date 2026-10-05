@@ -13,7 +13,11 @@ export function validate(s){if(!s||typeof s!=='object'||Array.isArray(s))return[
  if(!Array.isArray(s.props))e.push('"props" must be an array');
  else s.props.forEach((p,i)=>{if(!p||typeof p!=='object'){e.push(`props[${i}] must be an object`);return;}
   if(typeof p.assetPath!=='string')e.push(`props[${i}].assetPath must be a string`);
-  if(p.position!==undefined&&!isPair(p.position))e.push(`props[${i}].position must be [x, y]`);});
+  if(p.position!==undefined&&!isPair(p.position))e.push(`props[${i}].position must be [x, y]`);
+  if(p.alpha!==undefined&&!Number.isFinite(p.alpha))e.push(`props[${i}].alpha must be a number`);
+  if(p.animations!==undefined){if(!Array.isArray(p.animations))e.push(`props[${i}].animations must be an array`);
+   else p.animations.forEach((a,j)=>{if(!a||typeof a!=='object'||typeof a.name!=='string')e.push(`props[${i}].animations[${j}].name must be a string`);
+    else if(a.offsets!==undefined&&!isPair(a.offsets))e.push(`props[${i}].animations[${j}].offsets must be [x, y]`);});}});
  if(!s.characters||typeof s.characters!=='object'||Array.isArray(s.characters))e.push('"characters" must be an object');
  else for(const[k,c]of Object.entries(s.characters)){if(!c||typeof c!=='object'){e.push(`characters.${k} must be an object`);continue;}
   if(c.position!==undefined&&!isPair(c.position))e.push(`characters.${k}.position must be [x, y]`);}
@@ -40,19 +44,21 @@ async function inflate(en){if(en.method===0)return en.raw;
 
 // Reads .fnfs/.zip/.json. Returns {stage,jsonPath,entries,images,extra}. Never modifies the source file.
 export async function openContainer(buf){const b=new Uint8Array(buf);
- if(!isZip(b)){try{return{stage:JSON.parse(new TextDecoder().decode(b)),jsonPath:null,entries:[],images:[],extra:[]};}
+ if(!isZip(b)){try{return{stage:JSON.parse(new TextDecoder().decode(b)),jsonPath:null,entries:[],images:[],atlases:[],extra:[]};}
   catch{throw new Error('Unrecognized file: not a ZIP container and not valid JSON. The file was not modified.');}}
- const ens=await readZip(buf),entries=[],images=[],extra=[],cands=[];
- for(const en of ens){const data=await inflate(en),kind=/\.(png|jpe?g|webp|svg)$/i.test(en.path)?'image':/\.json$/i.test(en.path)?'json':'other';
+ const ens=await readZip(buf),entries=[],images=[],extra=[],cands=[],atlases=[];
+ const stems=new Set(ens.filter(x=>/\.(png|jpe?g|webp|svg)$/i.test(x.path)).map(x=>x.path.replace(/\.\w+$/,'').toLowerCase()));
+ for(const en of ens){const data=await inflate(en),kind=/\.(png|jpe?g|webp|svg)$/i.test(en.path)?'image':/\.json$/i.test(en.path)?'json':/\.xml$/i.test(en.path)||(/\.txt$/i.test(en.path)&&stems.has(en.path.replace(/\.\w+$/,'').toLowerCase()))?'atlas':'other';
   entries.push({path:en.path,size:data.length,kind});
   if(kind==='image')images.push({path:en.path,data});
+  else if(kind==='atlas')atlases.push({path:en.path,data});
   else if(kind==='json'){let j=null;try{j=JSON.parse(new TextDecoder().decode(data));}catch{}
    if(j&&typeof j==='object'&&('props'in j||'characters'in j||'cameraZoom'in j))cands.push({path:en.path,j,data});else extra.push({path:en.path,data});}
   else extra.push({path:en.path,data});}
  const best=cands.find(c=>/stage/i.test(c.path))||cands[0];
  if(!best)throw new Error(`ZIP read OK (${ens.length} files) but no Stage JSON (props/characters/cameraZoom) was found.`);
  cands.filter(c=>c!==best).forEach(c=>extra.push({path:c.path,data:c.data}));
- return{stage:best.j,jsonPath:best.path,entries,images,extra};}
+ return{stage:best.j,jsonPath:best.path,entries,images,atlases,extra};}
 
 // ---- ZIP writer (stored) ----
 const T=new Uint32Array(256).map((_,n)=>{let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;return c>>>0;});
@@ -69,6 +75,7 @@ export function writeZip(files){const enc=new TextEncoder(),parts=[],cd=[];let o
 
 export async function buildPackage(stage,assets,c){const files=[];
  files.push({path:(c&&c.jsonPath)||`data/stages/${slug(stage.name)}.json`,data:new TextEncoder().encode(JSON.stringify(stage,null,2))});
- for(const a of assets)files.push({path:a.path,data:new Uint8Array(await a.blob.arrayBuffer())});
+ for(const a of assets){files.push({path:a.path,data:new Uint8Array(await a.blob.arrayBuffer())});
+  if(a.atlas)files.push({path:a.atlas.path,data:new Uint8Array(await a.atlas.blob.arrayBuffer())});}
  for(const x of(c&&c.extra)||[])files.push(x);
  return writeZip(files);}

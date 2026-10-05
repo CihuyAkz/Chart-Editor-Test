@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#120e1f"/><path d="M50 20 76 55H60v25H40V55H24z" fill="#ff4f9a"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34196a"/><stop offset=".55" stop-color="#1c1233"/><stop offset="1" stop-color="#0f0b1b"/></linearGradient>
+<radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff4f9a" stop-opacity=".38"/><stop offset="1" stop-color="#ff4f9a" stop-opacity="0"/></radialGradient>
+<linearGradient id="ar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8fc4"/><stop offset=".5" stop-color="#ff4f9a"/><stop offset="1" stop-color="#d12a77"/></linearGradient>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<circle cx="256" cy="256" r="190" fill="url(#glow)"/>
+<g fill="none" stroke="#4fd1ff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+<path d="M126 196v-48a22 22 0 0 1 22-22h48"/><path d="M316 126h48a22 22 0 0 1 22 22v48"/>
+<path d="M386 316v48a22 22 0 0 1-22 22h-48"/><path d="M196 386h-48a22 22 0 0 1-22-22v-48"/>
+</g>
+<rect x="364" y="364" width="44" height="44" rx="10" fill="#ff4f9a" stroke="#fff" stroke-width="8"/>
+<g transform="translate(256 252) scale(2.1) translate(-50 -50)" stroke-linejoin="round">
+<polygon points="50,10 88,52 64,52 64,90 36,90 36,52 12,52" fill="#7a1f4d" stroke="#7a1f4d" stroke-width="5" transform="translate(0 4)"/>
+<polygon points="50,10 88,52 64,52 64,90 36,90 36,52 12,52" fill="url(#ar)" stroke="#fff" stroke-width="5"/>
+</g>
+</svg>
