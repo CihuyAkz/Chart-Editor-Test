@@ -45,3 +45,11 @@ button:has(>.ic),.acts button,#bar button,#foot button{display:inline-flex;align
 .f select{width:100%}.f input[type=checkbox]{width:20px;height:20px;accent-color:var(--ac);justify-self:start}
 #foot label{display:inline-flex;align-items:center;gap:6px}
 @media(pointer:coarse){.ib .ic{width:20px;height:20px}.f select{min-height:42px}}
+.asset .noimg{width:44px;height:44px;display:grid;place-items:center;color:var(--er);border:1px dashed var(--er);border-radius:4px}
+
+.cprow{display:grid;grid-template-columns:42px 1fr auto auto;gap:6px;align-items:center;padding:3px 8px}
+.cprow b{cursor:pointer;color:var(--a2);font-size:13px}.cprow .cs{font-size:12px;color:var(--dm);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cprow .cs.ok{color:var(--ok)}.cprow .cs.er{color:var(--er)}
+.cinfo{margin:2px 8px;font-size:12px;line-height:1.45;color:var(--dm)}.cinfo.er{color:var(--er)}.cinfo.ok{color:var(--ok)}
+/* Fixed width: the label changes (Saved / Unsaved Changes / Save failed); a width change would shift the toolbar mid-tap. */
+#save{min-width:174px;justify-content:center}

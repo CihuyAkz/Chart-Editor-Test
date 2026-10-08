@@ -47,8 +47,8 @@ export async function openContainer(buf){const b=new Uint8Array(buf);
  if(!isZip(b)){try{return{stage:JSON.parse(new TextDecoder().decode(b)),jsonPath:null,entries:[],images:[],atlases:[],extra:[]};}
   catch{throw new Error('Unrecognized file: not a ZIP container and not valid JSON. The file was not modified.');}}
  const ens=await readZip(buf),entries=[],images=[],extra=[],cands=[],atlases=[];
- const stems=new Set(ens.filter(x=>/\.(png|jpe?g|webp|svg)$/i.test(x.path)).map(x=>x.path.replace(/\.\w+$/,'').toLowerCase()));
- for(const en of ens){const data=await inflate(en),kind=/\.(png|jpe?g|webp|svg)$/i.test(en.path)?'image':/\.json$/i.test(en.path)?'json':/\.xml$/i.test(en.path)||(/\.txt$/i.test(en.path)&&stems.has(en.path.replace(/\.\w+$/,'').toLowerCase()))?'atlas':'other';
+ const stems=new Set(ens.filter(x=>/\.(png|jpe?g|webp|svg|astc)$/i.test(x.path)).map(x=>x.path.replace(/\.\w+$/,'').toLowerCase()));
+ for(const en of ens){const data=await inflate(en),kind=/\.(png|jpe?g|webp|svg|astc)$/i.test(en.path)?'image':/\.json$/i.test(en.path)?'json':/\.xml$/i.test(en.path)||(/\.txt$/i.test(en.path)&&stems.has(en.path.replace(/\.\w+$/,'').toLowerCase()))?'atlas':'other';
   entries.push({path:en.path,size:data.length,kind});
   if(kind==='image')images.push({path:en.path,data});
   else if(kind==='atlas')atlases.push({path:en.path,data});
@@ -75,7 +75,7 @@ export function writeZip(files){const enc=new TextEncoder(),parts=[],cd=[];let o
 
 export async function buildPackage(stage,assets,c){const files=[];
  files.push({path:(c&&c.jsonPath)||`data/stages/${slug(stage.name)}.json`,data:new TextEncoder().encode(JSON.stringify(stage,null,2))});
- for(const a of assets){files.push({path:a.path,data:new Uint8Array(await a.blob.arrayBuffer())});
+ for(const a of assets){if(a.preview)continue;files.push({path:a.path,data:new Uint8Array(await a.blob.arrayBuffer())});
   if(a.atlas)files.push({path:a.atlas.path,data:new Uint8Array(await a.atlas.blob.arrayBuffer())});}
  for(const x of(c&&c.extra)||[])files.push(x);
  return writeZip(files);}

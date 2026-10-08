@@ -1,14 +1,19 @@
 import{DEFAULT_STAGE,newChar,normalize,validate,openContainer,buildPackage,slug}from'./stage.js';
 import{parseAtlas,atlasPrefixes,animFrames,atlasKind}from'./atlas.js';
 import{ic,hydrate}from'./icons.js';
+import{isAstc,decodeAstc}from'./astc.js';
 hydrate();
 const $=s=>document.querySelector(s);
 const el=(t,a={},...k)=>{const e=document.createElement(t);for(const[x,y]of Object.entries(a))(x in e)?e[x]=y:e.setAttribute(x,y);e.append(...k);return e;};
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const mime=p=>({png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',svg:'image/svg+xml'})[String(p).split('.').pop().toLowerCase()]||'application/octet-stream';
-let stage=DEFAULT_STAGE(),container=null,sel=null,curAsset=null,dirtyT=0,mvT=0,tt=0,VW=0,VH=0,dpr=1,pend=0,ac=null,bump=0,raf=0,pv=0;
+let stage=DEFAULT_STAGE(),container=null,sel=null,curAsset=null,isDirty=false,rev=0,autoT=0,mvT=0,tt=0,VW=0,VH=0,dpr=1,pend=0,ac=null,bump=0,raf=0,pv=0;
 const view={x:640,y:400,z:.5};let V=view;
 const assets=[],flags={hid:new Set(),lock:new Set()},cfg={snap:10,grid:true,cam:true,camX:640,camY:360,mode:false,anim:true};
+const charVis={};/* editor-only character visuals (never written to the stage JSON) */
+const PK='fnfse.prefs',prefs={autosave:60};
+try{const q=JSON.parse(localStorage.getItem(PK)||'{}');if(q&&(q.autosave===0||(q.autosave>=5&&q.autosave<=3600)))prefs.autosave=+q.autosave;}catch{}
+const setPref=(k,v)=>{prefs[k]=v;try{localStorage.setItem(PK,JSON.stringify(prefs));}catch{}};
 const prevAnim=new Map(),animStart=new Map(),danceIdx=new Map();let animT0=performance.now(),animRaf=0,animLast=0,playT0=0;
 const Hs={u:[],r:[],last:JSON.stringify(stage)};
 const cv=$('#cv'),cx=cv.getContext('2d'),vp=$('#vp'),js=$('#js');
@@ -28,6 +33,32 @@ const same=it=>!!sel&&sel.k===it.k&&(it.k==='p'?sel.i===it.i:sel.id===it.id);
 const cur=()=>sel?objs().find(same)||null:null;
 const selObj=()=>{const c=cur();return c&&c.o;};
 const pick=it=>{sel=it.k==='p'?{k:'p',i:it.i}:{k:'c',id:it.id};renderList();renderInsp();draw();};
+/* ---------- Character visuals (editor-only preview of BF / DAD / GF) ---------- */
+const isPair=a=>Array.isArray(a)&&a.length===2&&a.every(Number.isFinite);
+const pairOf=a=>isPair(a)?a:[0,0];
+const baseName=p=>String(p||'').split('/').pop();
+function charDataError(j){if(!j||typeof j!=='object'||Array.isArray(j))return'not a character JSON object';
+ if('props'in j||'cameraZoom'in j||'characters'in j)return'this looks like a stage JSON, not a character';
+ if(typeof j.assetPath!=='string'||!j.assetPath)return'missing \"assetPath\"';
+ if(j.animations!==undefined&&!Array.isArray(j.animations))return'\"animations\" must be an array';
+ if(j.offsets!==undefined&&!isPair(j.offsets))return'\"offsets\" must be [x, y]';
+ if(j.scale!==undefined&&!Number.isFinite(j.scale))return'\"scale\" must be a number';return'';}
+function charInfo(id){const v=charVis[id];if(!v||!v.data)return null;
+ const a=(v.assetKey&&assets.find(x=>x.path===v.assetKey))||findAsset(v.data.assetPath);return{v,d:v.data,a};}
+// Virtual "prop" so the same atlas/animation code can draw a character.
+function charProp(id){const v=charVis[id],so=stage.characters[id];if(!v||!so)return null;const d=v.data,k=+d.scale>0?+d.scale:1,[sx,sy]=sc(so);
+ return{name:'char:'+id,assetPath:d.assetPath,animations:d.animations,startingAnimation:d.startingAnimation,scale:[k*sx,k*sy],isPixel:!!d.isPixel,danceEvery:d.danceEvery};}
+const needsAtlas=d=>/^(sparrow|packer|multisparrow)$/i.test(d.renderType||'');
+// Same placement as the game: sprite feet (bottom-centre) sit on stage position, then the character's own offsets apply.
+function charBox(it){const ci=charInfo(it.id);if(!ci||!ci.a||!ci.a.img||(needsAtlas(ci.d)&&!ci.a.atlas))return null;
+ const vp=charProp(it.id),a=ci.a,f=a.atlas?firstFrame(vp,a):null,[kx,ky]=vp.scale,w=(f?f.fw:a.w)*kx,h=(f?f.fh:a.h)*ky,[x,y]=it.o.position||[0,0],[ox,oy]=ci.v.useOffsets?pairOf(ci.d.offsets):[0,0];
+ return{x:x-w/2+ox,y:y-h+oy,w,h,a,vp,flip:!!ci.v.flipX};}
+function charNote(id){const ci=charInfo(id);if(!ci)return'';const b=baseName(ci.d.assetPath);
+ if(!ci.a)return` · sprite missing: ${b}`;if(!ci.a.img)return' · sprite cannot be decoded here';if(needsAtlas(ci.d)&&!ci.a.atlas)return` · needs ${b}.xml / .txt`;return'';}
+function useAssetVisual(id,a){const an=a.atlas?detectAnims(a):[];
+ charVis[id]={src:'asset',assetKey:a.path,flipX:false,data:{name:a.base,renderType:a.atlas?a.atlas.type:'static',assetPath:a.path.replace(/^images\//,'').replace(/\.\w+$/,''),scale:1,offsets:[0,0],isPixel:false,flipX:false,danceEvery:0,
+  ...(an.length?{startingAnimation:an[0].name,animations:an}:{})}};prevAnim.delete('char:'+id);}
+function visChanged(){renderAssets();renderInsp();draw();dirty();}
 function findAsset(p){const l=String(p||'').toLowerCase(),b=l.split('/').pop();
  return assets.find(a=>a.path.toLowerCase().replace(/^images\//,'').replace(/\.\w+$/,'')===l)||assets.find(a=>a.base.toLowerCase()===b);}
 /* ---------- Atlas animation helpers ---------- */
@@ -38,13 +69,15 @@ function firstFrame(o,a){const an=curAnim(o),l=an?animFrames(a.atlas,an):[];retu
 function animFrame(o,a,key,now){const an=curAnim(o),l=an?animFrames(a.atlas,an):[];if(!an||!l.length)return{fr:a.atlas.frames[0],an:null};
  const fps=Math.max(1,+an.frameRate||24),t=(now-(animStart.get(key)??animT0))/1000,i=Math.floor(t*fps),n=l.length;
  return{fr:l[an.looped===false?Math.min(i,n-1):i%n],an};}
-const hasAnim=()=>stage.props.some(o=>{const a=o&&findAsset(o.assetPath);const an=a&&a.atlas&&curAnim(o);return an&&animFrames(a.atlas,an).length>1;});
+function animTargets(){const l=[];stage.props.forEach((o,i)=>{if(o)l.push({key:'p:'+(o.name??i),o,a:findAsset(o.assetPath)});});
+ for(const id of Object.keys(charVis)){const ci=charInfo(id),vp=charProp(id);if(ci&&vp&&ci.a)l.push({key:'c:'+id,o:vp,a:ci.a});}return l;}
+const hasAnim=()=>animTargets().some(({o,a})=>{const an=a&&a.atlas&&curAnim(o);return an&&animFrames(a.atlas,an).length>1;});
 function animLoop(t){animRaf=0;if(!cfg.anim||cfg.mode||document.hidden||!hasAnim())return;if(t-animLast>=33){animLast=t;paint();}animRaf=requestAnimationFrame(animLoop);}
 function ensureAnim(){if(!animRaf&&cfg.anim&&!cfg.mode&&!document.hidden&&hasAnim())animRaf=requestAnimationFrame(animLoop);}
 const restartAnim=()=>{animT0=performance.now();animStart.clear();draw();};
 document.addEventListener('visibilitychange',ensureAnim);
 function bounds(it){const o=it.o,[x,y]=o.position||[0,0],[sx,sy]=sc(o);
- if(it.k==='c')return{x:x-150*sx,y:y-400*sy,w:300*sx,h:400*sy};
+ if(it.k==='c')return charBox(it)||{x:x-150*sx,y:y-400*sy,w:300*sx,h:400*sy};
  const a=findAsset(o.assetPath),f=a&&a.atlas?firstFrame(o,a):null;
  return{x,y,w:(f?f.fw:a?a.w:200)*sx,h:(f?f.fh:a?a.h:200)*sy,a};}
 const rect=b=>({x:Math.min(b.x,b.x+b.w),y:Math.min(b.y,b.y+b.h),w:Math.abs(b.w),h:Math.abs(b.h)});
@@ -55,6 +88,7 @@ function commit(keep){const s=JSON.stringify(stage);if(s===Hs.last)return;Hs.u.p
 function restore(s){stage=JSON.parse(s);Hs.last=s;if(sel&&!cur())sel=null;sync();}
 const undo=()=>{if(Hs.u.length){Hs.r.push(Hs.last);restore(Hs.u.pop());}};
 const redo=()=>{if(Hs.r.length){Hs.u.push(Hs.last);restore(Hs.r.pop());}};
+const clearVis=()=>{for(const k of Object.keys(charVis))delete charVis[k];for(const k of[...prevAnim.keys()])if(k.startsWith('char:'))prevAnim.delete(k);};
 function resetHist(){Hs.u=[];Hs.r=[];Hs.last=JSON.stringify(stage);flags.hid.clear();flags.lock.clear();sel=null;}
 function sync(insp=true){renderList();if(insp)renderInsp();jsonSync();$('#undo').disabled=!Hs.u.length;$('#redo').disabled=!Hs.r.length;draw();dirty();}
 const live=()=>{draw();jsonSync();dirty();};
@@ -63,23 +97,38 @@ const live=()=>{draw();jsonSync();dirty();};
 const idb=(m,f)=>new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error('IndexedDB unavailable'));const r=indexedDB.open('fnfse',1);
  r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onerror=()=>rej(r.error);
  r.onsuccess=()=>{const t=r.result.transaction('kv',m),q=f(t.objectStore('kv'));t.oncomplete=()=>{res(q.result);r.result.close();};t.onerror=()=>rej(t.error);};});
-function dirty(){const s=$('#save');$('#save span').textContent='Unsaved Changes';s.className='warn';clearTimeout(dirtyT);dirtyT=setTimeout(()=>save(),800);}
-async function save(manual){try{await idb('readwrite',s=>s.put({stage:JSON.stringify(stage),assets:assets.map(({name,path,blob,atlas})=>({name,path,blob,atlas:atlas?{path:atlas.path,blob:atlas.blob}:null})),container,cfg:{snap:cfg.snap,grid:cfg.grid,camX:cfg.camX,camY:cfg.camY,anim:cfg.anim}},'project'));
- $('#save span').textContent='Saved';$('#save').className='ok';if(manual)toast('Project saved locally in this browser');}
- catch(e){$('#save span').textContent='Save failed';toast('Cannot save to IndexedDB: '+e.message,1);}}
+const fmtSec=n=>n<=0?'off':n%60===0?(n/60)+' min':n+' s';
+function syncSaveTip(){$('#save').title='Save project locally (Ctrl+S). Autosave: '+(prefs.autosave>0?'every '+fmtSec(prefs.autosave):'off');}
+function armAuto(){if(autoT||!isDirty||!(prefs.autosave>0))return;autoT=setTimeout(()=>{autoT=0;if(isDirty)save();},prefs.autosave*1000);}
+function dirty(){isDirty=true;rev++;const s=$('#save');$('#save span').textContent='Unsaved Changes';s.className='warn';armAuto();}
+function markClean(){isDirty=false;clearTimeout(autoT);autoT=0;$('#save span').textContent='Saved';$('#save').className='ok';}
+const plainVis=()=>JSON.parse(JSON.stringify(charVis));
+async function save(manual){clearTimeout(autoT);autoT=0;const r=rev;
+ try{await idb('readwrite',s=>s.put({stage:JSON.stringify(stage),assets:assets.map(({name,path,blob,atlas,preview})=>({name,path,blob,preview:!!preview,atlas:atlas?{path:atlas.path,blob:atlas.blob}:null})),charVis:plainVis(),container,cfg:{snap:cfg.snap,grid:cfg.grid,camX:cfg.camX,camY:cfg.camY,anim:cfg.anim}},'project'));
+  if(r===rev)markClean();else{$('#save span').textContent='Unsaved Changes';$('#save').className='warn';armAuto();}
+  if(manual)toast('Project saved locally in this browser');}
+ catch(e){$('#save span').textContent='Save failed';$('#save').className='warn';toast('Cannot save to IndexedDB: '+e.message,1);armAuto();}}
+addEventListener('pagehide',()=>{if(isDirty&&prefs.autosave>0)save();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&isDirty&&prefs.autosave>0)save();});
+addEventListener('beforeunload',e=>{if(isDirty&&!(prefs.autosave>0)){e.preventDefault();e.returnValue='';}});
 async function loadProject(silent){let d;try{d=await idb('readonly',s=>s.get('project'));}catch(e){if(!silent)toast(e.message,1);return false;}
  if(!d){if(!silent)toast('No saved project found',1);return false;}
  try{const s=normalize(JSON.parse(d.stage)),er=validate(s);if(er.length)throw new Error(er[0]);
-  clearAssets();for(const a of d.assets||[]){const n=await addImage(a.name,a.path,a.blob);if(n&&a.atlas)await attachAtlas(n,a.atlas.blob,a.atlas.path,true);}
-  stage=s;container=d.container||null;Object.assign(cfg,d.cfg||{});resetHist();syncCfgUI();renderAssets();sync();$('#save span').textContent='Saved';$('#save').className='ok';fit();return true;}
+  clearAssets();for(const a of d.assets||[]){const n=await addImage(a.name,a.path,a.blob);if(n){if(a.preview)n.preview=true;if(a.atlas)await attachAtlas(n,a.atlas.blob,a.atlas.path,true);}}
+  clearVis();Object.assign(charVis,d.charVis||{});
+  stage=s;container=d.container||null;Object.assign(cfg,d.cfg||{});resetHist();syncCfgUI();renderAssets();sync();markClean();fit();return true;}
  catch(e){toast('Saved project is unreadable: '+e.message,1);return false;}}
 
 /* ---------- Assets ---------- */
-function clearAssets(){assets.forEach(a=>URL.revokeObjectURL(a.url));assets.length=0;curAsset=null;}
-async function addImage(name,path,blob){const url=URL.createObjectURL(blob),img=new Image();img.src=url;
- try{await img.decode();}catch{URL.revokeObjectURL(url);toast('Could not read image: '+name,1);return null;}
- const o=assets.findIndex(a=>a.path===path);if(o>=0){URL.revokeObjectURL(assets[o].url);assets.splice(o,1);}
- const a={name,base:name.replace(/\.\w+$/,''),path,blob,img,url,w:img.naturalWidth||100,h:img.naturalHeight||100};assets.push(a);return a;}
+function clearAssets(){assets.forEach(a=>a.url&&URL.revokeObjectURL(a.url));assets.length=0;curAsset=null;}
+async function addImage(name,path,blob){let shown=blob,astc=null,bad=null;
+ if(isAstc(name)){try{const d=await decodeAstc(await blob.arrayBuffer());shown=d.blob;astc={w:d.w,h:d.h,bw:d.bw,bh:d.bh};}
+  catch(e){bad=e.message;toast(`ASTC ${name}: ${e.message}. The original file is kept and will be exported unchanged.`,1);}}
+ let url=null,img=null;
+ if(!bad){url=URL.createObjectURL(shown);img=new Image();img.src=url;
+  try{await img.decode();}catch{URL.revokeObjectURL(url);toast('Could not read image: '+name,1);return null;}}
+ const o=assets.findIndex(a=>a.path===path);if(o>=0){if(assets[o].url)URL.revokeObjectURL(assets[o].url);assets.splice(o,1);}
+ const a={name,base:name.replace(/\.\w+$/,''),path,blob,img,url,astc,bad,w:astc?astc.w:img?img.naturalWidth||100:100,h:astc?astc.h:img?img.naturalHeight||100:100};assets.push(a);return a;}
 async function attachAtlas(a,blob,path,silent){const type=atlasKind(path);if(!type)return false;
  try{const at=parseAtlas(await blob.text(),type);at.path=path;at.blob=blob;a.atlas=at;return true;}
  catch(e){if(!silent)toast('Atlas '+path.split('/').pop()+': '+e.message,1);return false;}}
@@ -92,16 +141,17 @@ function detectAnims(a,ex=[]){const used=new Set(ex.map(x=>x&&x.prefix)),names=n
   out.push({name:n,prefix:pre,frameRate:24,looped:true,offsets:[0,0]});}
  return out;}
 async function uploadImages(fs){for(const f of fs)await addImage(f.name,`images/stages/${slug(stage.name)}/${f.name}`,f);renderAssets();draw();dirty();}
-function rmAsset(a){URL.revokeObjectURL(a.url);assets.splice(assets.indexOf(a),1);if(curAsset===a)curAsset=null;renderAssets();draw();dirty();}
+function rmAsset(a){if(a.url)URL.revokeObjectURL(a.url);assets.splice(assets.indexOf(a),1);if(curAsset===a)curAsset=null;renderAssets();draw();dirty();}
 function renderAssets(){const L=$('#alist');L.replaceChildren();
- if(!assets.length)L.append(el('p',{className:'hint'},'No assets yet. Upload PNG, JPG, WEBP or SVG, plus the matching .xml / .txt atlas for animated props. Files stay in your browser.'));
- for(const a of assets){const c=el('div',{className:'asset'+(a===curAsset?' on':''),draggable:true,tabIndex:0,role:'option'},el('img',{src:a.url,alt:''}),
-  el('span',{},a.name+' ',el('small',{},`${a.w}×${a.h}`+(a.atlas?` · ${a.atlas.type==='sparrow'?'XML':'TXT'} ${a.atlas.frames.length} frames`:''))),el('button',{className:'ib','title':'Remove asset','aria-label':'Remove asset '+a.name,onclick:e=>{e.stopPropagation();rmAsset(a);}},ic('x')));
+ if(!assets.length)L.append(el('p',{className:'hint'},'No assets yet. Upload PNG, JPG, WEBP, SVG or ASTC, plus the matching .xml / .txt atlas for animated props. Files stay in your browser.'));
+ for(const a of assets){const c=el('div',{className:'asset'+(a===curAsset?' on':''),draggable:true,tabIndex:0,role:'option'},a.url?el('img',{src:a.url,alt:''}):el('span',{className:'noimg',title:a.bad||''},ic('image')),
+  el('span',{},a.name+' ',el('small',{},`${a.astc?`ASTC ${a.astc.bw}×${a.astc.bh} · `:a.bad?'ASTC (cannot decode here) · ':''}${a.w}×${a.h}`+(a.atlas?` · ${a.atlas.type==='sparrow'?'XML':'TXT'} ${a.atlas.frames.length} frames`:'')+(a.preview?' · preview only (not exported)':''))),el('button',{className:'ib','title':'Remove asset','aria-label':'Remove asset '+a.name,onclick:e=>{e.stopPropagation();rmAsset(a);}},ic('x')));
   c.ondragstart=e=>e.dataTransfer.setData('text/plain',a.path);c.onclick=()=>{curAsset=a;renderAssets();};c.ondblclick=()=>addProp(a);
   c.onkeydown=e=>{if(e.key==='Enter')addProp(a);};L.append(c);}}
 
 /* ---------- Object operations ---------- */
-function addProp(a,x,y){const z=Math.max(0,...stage.props.map(p=>+p.zIndex||0))+10;
+function addProp(a,x,y){if(a.preview){a.preview=false;toast('This asset was preview-only; it is now included in exports.');}
+const z=Math.max(0,...stage.props.map(p=>+p.zIndex||0))+10;
  const o={name:uniq(a.base),assetPath:a.path.replace(/^images\//,'').replace(/\.\w+$/,''),zIndex:z,position:[sn(x??view.x-a.w/2),sn(y??view.y-a.h/2)],scale:[1,1],scroll:[1,1],alpha:1,isPixel:false};
  if(a.atlas){o.animType=a.atlas.type;const an=detectAnims(a);if(an.length){o.animations=an;o.startingAnimation=an[0].name;}}
  stage.props.push(o);
@@ -177,11 +227,39 @@ function animUI(I,o){const a=findAsset(o.assetPath),at=a&&a.atlas,list=Array.isA
   ...(at?[el('button',{className:'pri',textContent:'Detect',title:'Detect animations from atlas',onclick:()=>{const add=detectAnims(a,list||[]);if(!add.length)return toast('No new prefixes found in the atlas');
     if(!Array.isArray(o.animations))o.animations=[];o.animations.push(...add);if(!o.animType)o.animType=at.type;if(!o.startingAnimation)o.startingAnimation=add[0].name;commit();toast(add.length+' animation(s) added');}}),
    el('button',{textContent:'Restart',onclick:restartAnim})]:[])));}
+function charRows(I){I.append(el('h3',{},'Character preview'));
+ for(const id of['bf','dad','gf']){const has=!!stage.characters[id],ci=charInfo(id),note=ci?charNote(id):'';
+  const st=!has?'slot not in stage':!ci?'placeholder box':(ci.d.name||baseName(ci.d.assetPath))+(note||' · sprite ready'),cls=!has||!ci?'':note?'er':'ok';
+  I.append(el('div',{className:'cprow'},el('b',{textContent:id.toUpperCase(),title:'Select '+id,onclick:()=>{if(has)pick({k:'c',id});}}),el('span',{className:'cs '+cls,title:st},st),
+   ib('folder','Insert character JSON / sprite files',()=>insertChar(id)),
+   ci?ib('x','Remove visual (back to placeholder)',()=>{delete charVis[id];prevAnim.delete('char:'+id);visChanged();}):el('span')));}
+ I.append(el('p',{className:'hint'},'Pick a character .json (with its .png/.astc and .xml) to see it on stage and set where it stands. This is preview-only: it is never written into the Stage JSON.'));}
+function charUI(I,id){const ci=charInfo(id),vp=ci&&charProp(id);I.append(el('h3',{},'Visual: '+id.toUpperCase()));
+ const sp=el('select',{'aria-label':'Sprite asset'});sp.append(el('option',{value:'',textContent:ci?'(auto: from assetPath)':'(placeholder box)'}));
+ for(const a of assets)sp.append(el('option',{value:a.path,textContent:a.name+(a.preview?' (preview)':'')+(a.atlas?' + atlas':'')}));
+ sp.value=ci&&ci.v.assetKey&&assets.some(a=>a.path===ci.v.assetKey)?ci.v.assetKey:'';
+ sp.onchange=()=>{const a=assets.find(x=>x.path===sp.value);
+  if(!ci){if(a)useAssetVisual(id,a);else return;}else if(a)ci.v.assetKey=a.path;else delete ci.v.assetKey;visChanged();};
+ I.append(fld('Sprite asset',sp),el('div',{className:'acts'},el('button',{className:'pri',textContent:'Insert JSON / sprites',onclick:()=>insertChar(id)}),
+  ...(ci?[el('button',{textContent:'Clear',onclick:()=>{delete charVis[id];prevAnim.delete('char:'+id);visChanged();}})]:[])));
+ if(!ci){I.append(el('p',{className:'hint'},'Choose an uploaded asset above, or insert a character JSON to preview the real character.'));return;}
+ const d=ci.d,b=baseName(d.assetPath),note=charNote(id);
+ I.append(el('p',{className:'cinfo '+(note?'er':'ok')},note?`Sprite problem${note.replace(' · ',': ')}`:`Sprite: ${ci.a.name}${ci.a.atlas?` + atlas (${ci.a.atlas.frames.length} frames)`:''}`),
+  el('p',{className:'cinfo'},`${d.name||b} · ${d.renderType||'static'} · assetPath ${d.assetPath}`+(d.healthIcon&&d.healthIcon.id?` · icon ${d.healthIcon.id}`:'')+(d.singTime!==undefined?` · singTime ${d.singTime}`:'')));
+ if(/atlas/i.test(d.renderType||''))I.append(el('p',{className:'cinfo er'},'Adobe Animate atlases cannot be previewed here; the sprite sheet is shown as a placeholder.'));
+ I.append(fld('Use JSON offsets',el('input',{type:'checkbox',checked:!!ci.v.useOffsets,'aria-label':'Use JSON offsets',onchange:e=>{ci.v.useOffsets=e.target.checked;draw();dirty();}})),pf('Char offsets',d,'offsets',[0,0]),nf('Char scale',d,'scale',1,{step:.01,range:[.05,5]}),
+  fld('Flip X',el('input',{type:'checkbox',checked:!!ci.v.flipX,'aria-label':'Flip X',onchange:e=>{ci.v.flipX=e.target.checked;draw();dirty();}})));
+ const names=(Array.isArray(d.animations)?d.animations:[]).map(x=>x&&x.name).filter(Boolean);
+ if(names.length&&ci.a&&ci.a.atlas)I.append(self('Preview anim',names.map(n=>[n,n]),(curAnim(vp)||{}).name||names[0],v=>{prevAnim.set('char:'+id,v);restartAnim();ensureAnim();}),
+  el('div',{className:'acts'},el('button',{textContent:'Restart',onclick:restartAnim})));
+ I.append(el('div',{className:'acts'},el('button',{textContent:'Export character JSON',onclick:()=>dl(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),(d.name||id)+'.json')})),
+  el('p',{className:'hint'},'Stage position = where the feet stand. The JSON offsets are only applied if "Use JSON offsets" is on (off by default, so the position comes from the stage only). Scale and offsets are edited here; exporting saves them to the character JSON.'));}
 function renderInsp(){const I=$('#insp');I.replaceChildren();
  I.append(el('h3',{},'Stage'),tf('Name',stage,'name'),nf('Camera zoom',stage,'cameraZoom',1,{step:.01,range:[.2,3]}),cfgf('Cam X','camX'),cfgf('Cam Y','camY'),
   fld('Camera preview',el('input',{type:'checkbox',checked:cfg.cam,'aria-label':'Camera preview',onchange:e=>{cfg.cam=e.target.checked;draw();}}),
    el('button',{textContent:'Reset camera',onclick:()=>{cfg.camX=640;cfg.camY=360;stage.cameraZoom=1;commit();}})),
   el('p',{className:'hint'},'Camera X/Y only positions the preview frame; the Stage JSON stores just cameraZoom.'));
+ charRows(I);
  const c=cur();if(!c){I.append(el('p',{className:'hint'},'Select an object in the viewport or list to edit it.'));return;}
  const o=c.o;I.append(el('h3',{},c.k==='p'?'Prop':'Character: '+c.id.toUpperCase()));
  if(c.k==='p')I.append(tf('Name',o,'name',true),tf('Asset path',o,'assetPath'));
@@ -189,7 +267,7 @@ function renderInsp(){const I=$('#insp');I.replaceChildren();
  if(c.k==='p')I.append(pf('Scroll',o,'scroll',[1,1],{step:.01,uni:[0,2]}),nf('Alpha',o,'alpha',1,{step:.01,range:[0,1]}));else I.append(pf('Camera offsets',o,'cameraOffsets',[0,0]));
  I.append(nf('Z index',o,'zIndex',0,{range:[-100,500]}));
  if(c.k==='p')I.append(fld('Pixel mode',el('input',{type:'checkbox',checked:!!o.isPixel,'aria-label':'Pixel mode',onchange:e=>{o.isPixel=e.target.checked;commit(true);}})));
- if(c.k==='p')animUI(I,o);
+ if(c.k==='p')animUI(I,o);else charUI(I,c.id);
  const known=['name','assetPath','position','scale','scroll','zIndex','isPixel','cameraOffsets','alpha','animType','startingAnimation','danceEvery','animations'],ex=Object.keys(o).filter(k=>!known.includes(k));
  if(ex.length)I.append(el('p',{className:'hint'},'Extra fields preserved: '+ex.join(', ')));}
 function tab(t){document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.t===t)));document.querySelectorAll('.tp').forEach(p=>p.hidden=p.id!=='t-'+t);if(t==='json')jsonSync(true);}
@@ -207,10 +285,32 @@ $('#jrst').onclick=()=>jsonSync(true);
 $('#japp').onclick=()=>{const r=parseJ(js.value);if(r.err)return jerr(r.err);const s=normalize(r.v),er=validate(s);if(er.length)return jerr(er.join('; '));
  stage=s;if(sel&&!cur())sel=null;commit();jsonSync(true);jerr('Applied',1);};
 
+/* ---------- Insert character JSON + sprite files ---------- */
+let charTarget=null;
+const isImg=f=>/^image\//.test(f.type)||/\.(png|jpe?g|webp|svg|astc)$/i.test(f.name);
+function insertChar(id){if(!stage.characters[id])return toast('Add the '+id.toUpperCase()+' slot first',1);charTarget=id;$('#cfile').click();}
+async function isCharJson(f){try{const j=JSON.parse(await f.text());return!charDataError(j);}catch{return false;}}
+async function insertCharFiles(id,fs){if(!stage.characters[id])return toast('Add the '+id.toUpperCase()+' slot first',1);
+ let data=null;const imgs=[],atl=[];
+ for(const f of fs){if(/\.json$/i.test(f.name)){try{const j=JSON.parse(await f.text()),er=charDataError(j);if(er)toast(`${f.name}: ${er}`,1);else data=j;}catch(e){toast(`${f.name}: invalid JSON (${e.message})`,1);}}
+  else if(/\.(xml|txt)$/i.test(f.name))atl.push(f);else if(isImg(f))imgs.push(f);else toast('Unsupported file: '+f.name,1);}
+ if(!data&&!imgs.length&&!atl.length)return;
+ const ap=(data&&data.assetPath)||(charVis[id]&&charVis[id].data.assetPath)||'';
+ for(const f of imgs){const m=f.name.match(/^(.*)(\.\w+)$/),b=m?m[1]:f.name,e=m?m[2]:'';
+  const path=ap&&baseName(ap).toLowerCase()===b.toLowerCase()?`images/${ap}${e}`:`images/characters/${f.name}`;
+  const a=await addImage(f.name,path,f);if(a)a.preview=true;}
+ if(atl.length)await attachFiles(atl);
+ if(data){charVis[id]={src:'json',data,flipX:!!data.flipX};prevAnim.delete('char:'+id);}
+ visChanged();
+ const ci=charInfo(id);
+ if(data)toast(`${id.toUpperCase()}: ${data.name||baseName(data.assetPath)} inserted`+(charNote(id)?'.'+charNote(id).replace(' · ',' '):''),!!charNote(id));
+ else toast(ci?'Sprite files added'+(charNote(id)?'.'+charNote(id).replace(' · ',' '):''):'Sprite files added (preview only). Now insert a character JSON or choose it as the visual.');}
+$('#cfile').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(fs.length&&charTarget)await insertCharFiles(charTarget,fs);};
+
 /* ---------- Files ---------- */
 async function openFile(f){let c;try{c=await openContainer(await f.arrayBuffer());}catch(e){toast(e.message,1);return;}
  const s=normalize(c.stage),er=validate(s);if(er.length){toast('Invalid stage: '+er[0]+(er.length>1?` (+${er.length-1} more)`:''),1);return;}
- clearAssets();container=c.entries.length?{jsonPath:c.jsonPath,extra:c.extra,ext:(f.name.match(/\.(\w+)$/)||[])[1]||'zip'}:null;
+ clearAssets();clearVis();container=c.entries.length?{jsonPath:c.jsonPath,extra:c.extra,ext:(f.name.match(/\.(\w+)$/)||[])[1]||'zip'}:null;
  for(const im of c.images)await addImage(im.path.split('/').pop(),im.path,new Blob([im.data],{type:mime(im.path)}));
  for(const at of c.atlases||[]){const st=x=>x.replace(/\.\w+$/,'').toLowerCase(),a=assets.find(x=>st(x.path)===st(at.path))||assets.find(x=>x.base.toLowerCase()===st(at.path.split('/').pop()));
   if(!(a&&await attachAtlas(a,new Blob([at.data]),at.path,true)))c.extra.push(at);}
@@ -218,9 +318,13 @@ async function openFile(f){let c;try{c=await openContainer(await f.arrayBuffer()
  if(c.entries.length)modal('Container: '+f.name,el('p',{},`${c.entries.length} files found. Stage JSON in use: ${c.jsonPath}`),
   el('ul',{className:'tree'},...c.entries.map(e=>el('li',{className:e.path===c.jsonPath?'hit':''},`${e.path} (${e.kind}, ${e.size} B)`))));
  else toast('Stage loaded');}
-async function handleFiles(fs){const imgs=[],atl=[];for(const f of fs){if(/\.(fnfs|zip|json)$/i.test(f.name))await openFile(f);
+async function handleFiles(fs){const imgs=[],atl=[],chr=[];for(const f of fs){if(/\.json$/i.test(f.name)&&await isCharJson(f)){chr.push(f);continue;}
+  if(/\.(fnfs|zip|json)$/i.test(f.name))await openFile(f);
   else if(/\.(xml|txt)$/i.test(f.name))atl.push(f);
- else if(/^image\//.test(f.type)||/\.(png|jpe?g|webp|svg)$/i.test(f.name))imgs.push(f);else toast('Unsupported file: '+f.name,1);}
+ else if(/^image\//.test(f.type)||/\.(png|jpe?g|webp|svg|astc)$/i.test(f.name))imgs.push(f);else toast('Unsupported file: '+f.name,1);}
+ if(chr.length){const id=sel&&sel.k==='c'?sel.id:null;
+  if(!id){toast('That is a character JSON. Select BF, Dad or GF first (or use Insert in the Inspector), then open it again.',1);return;}
+  await insertCharFiles(id,[...chr,...imgs,...atl]);openR();tab('vis');return;}
  if(imgs.length){await uploadImages(imgs);tab('ast');}
  if(atl.length){await attachFiles(atl);tab('ast');}}
 $('#file').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)await handleFiles(fs);};
@@ -229,15 +333,23 @@ on('export',()=>{const ext=(container&&container.ext)||'zip';
  modal('Export',el('p',{},'JSON is validated before export. Unknown fields are kept. The package is a ZIP with the Stage JSON plus your assets.'),
   el('button',{className:'pri',textContent:'Export Stage JSON',onclick:()=>{if(okExport())dl(new Blob([JSON.stringify(stage,null,2)],{type:'application/json'}),slug(stage.name)+'.json');}}),
   el('button',{textContent:'Export Package (.'+ext+')',onclick:async()=>{if(!okExport())return;try{dl(await buildPackage(stage,assets,container),slug(stage.name)+'.'+ext);}catch(e){toast('Package failed: '+e.message,1);}}}));});
-on('new',()=>{if(!confirm('Start a new stage? Unexported changes in the editor will be lost.'))return;clearAssets();stage=DEFAULT_STAGE();container=null;resetHist();renderAssets();sync();fit();});
+on('new',()=>{if(!confirm('Start a new stage? Unexported changes in the editor will be lost.'))return;clearAssets();clearVis();stage=DEFAULT_STAGE();container=null;resetHist();renderAssets();sync();fit();});
 on('open',()=>$('#file').click());on('upl',()=>$('#file').click());on('save',()=>save(true));on('undo',undo);on('redo',redo);
 on('addp',()=>{if(curAsset)addProp(curAsset);else{openR();tab('ast');toast(assets.length?'Select an asset, then tap Add to stage':'Upload an image asset first');if(!assets.length)$('#file').click();}});
 on('addsel',()=>curAsset?addProp(curAsset):toast('Select an asset first',1));on('addc',addChar);
 on('tl',()=>$('#app').classList.toggle('hl'));on('tr',()=>$('#app').classList.toggle('hr'));
-on('set',()=>modal('Settings',el('button',{textContent:'Save project (local)',onclick:()=>save(true)}),
+function autosaveField(){const O=[[0,'Off'],[15,'Every 15 s'],[30,'Every 30 s'],[60,'Every 1 min (default)'],[120,'Every 2 min'],[300,'Every 5 min'],[600,'Every 10 min']];
+ if(!O.some(o=>o[0]===prefs.autosave))O.push([prefs.autosave,'Every '+fmtSec(prefs.autosave)]);O.push(['c','Custom…']);
+ const f=self('Autosave',O.map(([v,t])=>[String(v),t]),String(prefs.autosave),v=>{let n=v==='c'?parseFloat(prompt('Autosave every how many seconds? (5 to 3600, 0 = off)',prefs.autosave||60)):+v;
+  if(!Number.isFinite(n)||n<0||(n>0&&n<5)||n>3600){toast('Enter 0 (off) or a value from 5 to 3600 seconds',1);n=prefs.autosave;}
+  setPref('autosave',Math.round(n));clearTimeout(autoT);autoT=0;armAuto();syncSaveTip();
+  toast(n>0?'Autosave every '+fmtSec(Math.round(n)):'Autosave off. Use Save or Ctrl+S; the editor will warn before closing with unsaved changes.');
+  if(v==='c')on_set();});return f;}
+const on_set=()=>modal('Settings',autosaveField(),el('p',{className:'hint'},'Saves to this browser (IndexedDB), only when there are changes. A save is also attempted when the page is hidden or closed, unless autosave is off.'),el('button',{textContent:'Save project (local)',onclick:()=>save(true)}),
  el('button',{textContent:'Load saved project',onclick:async()=>{if(await loadProject(false))toast('Project loaded');}}),
  el('button',{textContent:'Clear local project',onclick:async()=>{if(!confirm('Delete the project saved in this browser?'))return;try{await idb('readwrite',s=>s.delete('project'));toast('Local project cleared');}catch(e){toast(e.message,1);}}}),
- el('p',{className:'hint'},'Everything runs locally; nothing is uploaded. Animated props: upload the .png together with its .xml (Sparrow) or .txt (Packer) atlas, then use Detect in the Inspector. Touch: drag to move, drag the pink corner to scale, drag empty space to pan, pinch to zoom, double-tap an object to open Inspector. Desktop: WASD/arrows (Shift = faster), Ctrl+Z/Y, Ctrl+D, Delete, G grid, F fullscreen, Space preview, Alt+drag or middle mouse to pan.')));
+ el('p',{className:'hint'},'Everything runs locally; nothing is uploaded. Animated props: upload the .png together with its .xml (Sparrow) or .txt (Packer) atlas, then use Detect in the Inspector. Touch: drag to move, drag the pink corner to scale, drag empty space to pan, pinch to zoom, double-tap an object to open Inspector. Desktop: WASD/arrows (Shift = faster), Ctrl+Z/Y, Ctrl+D, Delete, G grid, F fullscreen, Space preview, Alt+drag or middle mouse to pan.'));
+on('set',on_set);
 vp.ondragover=e=>e.preventDefault();
 vp.ondrop=async e=>{e.preventDefault();const r=cv.getBoundingClientRect(),[x,y]=s2w(e.clientX-r.left,e.clientY-r.top),a=assets.find(a=>a.path===e.dataTransfer.getData('text/plain'));
  if(a)return addProp(a,x,y);if(e.dataTransfer.files.length)await handleFiles([...e.dataTransfer.files]);};
@@ -257,19 +369,27 @@ function paint(){if(!VW)return;cx.setTransform(dpr,0,0,dpr,0,0);const p=cfg.mode
 function grid(){let st=cfg.snap>0?cfg.snap:10;while(st*V.z<12)st*=2;const[ox,oy]=s2w(0,0),[ex,ey]=s2w(VW,VH);cx.strokeStyle='#ffffff12';cx.lineWidth=1;cx.beginPath();
  for(let x=Math.floor(ox/st)*st;x<=ex;x+=st){const s=Math.round(w2s(x,0)[0])+.5;cx.moveTo(s,0);cx.lineTo(s,VH);}
  for(let y=Math.floor(oy/st)*st;y<=ey;y+=st){const s=Math.round(w2s(0,y)[1])+.5;cx.moveTo(0,s);cx.lineTo(VW,s);}cx.stroke();}
-function drawFrame(it,b,sx,sy){const o=it.o,{fr,an}=animFrame(o,b.a,it.key,performance.now());if(!fr)return;
+function drawFrame(it,b,sx,sy){const o=b.vp||it.o,{fr,an}=animFrame(o,b.a,it.key,performance.now());if(!fr)return;
  const[kx,ky]=sc(o),z=V.z,off=an&&Array.isArray(an.offsets)?an.offsets:[0,0],dw=fr.w*kx*z,dh=fr.h*ky*z,
-  dx=sx+(-fr.fx*kx-(+off[0]||0))*z,dy=sy+(-fr.fy*ky-(+off[1]||0))*z,fx=an&&an.flipX,fy=an&&an.flipY;
+  dx=sx+(-fr.fx*kx-(+off[0]||0))*z,dy=sy+(-fr.fy*ky-(+off[1]||0))*z,fx=!!(an&&an.flipX)!==!!b.flip,fy=an&&an.flipY;
  cx.save();
  if(fx||fy){const mx=sx+b.w*z/2,my=sy+b.h*z/2;cx.translate(mx,my);cx.scale(fx?-1:1,fy?-1:1);cx.translate(-mx,-my);}
  if(fr.rot){cx.translate(dx,dy+dh);cx.rotate(-Math.PI/2);cx.drawImage(b.a.img,fr.x,fr.y,fr.h,fr.w,0,0,dh,dw);}
  else cx.drawImage(b.a.img,fr.x,fr.y,fr.w,fr.h,dx,dy,dw,dh);
  cx.restore();}
+const CCOL={bf:'#4fa8ff',dad:'#b57bff',gf:'#ff6fae'};
+function charTag(it){if(cfg.mode)return;const col=CCOL[it.id]||'#9aa5b1',[px,py]=w2s(...(it.o.position||[0,0])),t=it.id.toUpperCase();
+ cx.globalAlpha=1;cx.fillStyle=col;cx.beginPath();cx.arc(px,py,4,0,7);cx.fill();cx.font='700 11px sans-serif';const w=cx.measureText(t).width+8;
+ cx.fillRect(px+7,py-9,w,16);cx.fillStyle='#10091c';cx.fillText(t,px+11,py+3);}
 function drawObj(it){const b=bounds(it),[sx,sy]=w2s(b.x,b.y);cx.globalAlpha=it.k==='p'?alphaOf(it.o):1;
- if(it.k==='p'&&b.a){cx.imageSmoothingEnabled=!it.o.isPixel;if(b.a.atlas)drawFrame(it,b,sx,sy);else cx.drawImage(b.a.img,sx,sy,b.w*V.z,b.h*V.z);cx.globalAlpha=1;return;}
+ if(it.k==='c'&&b.a&&b.a.img){const ci=charInfo(it.id);cx.imageSmoothingEnabled=!(ci&&ci.d.isPixel);
+  if(b.a.atlas)drawFrame(it,b,sx,sy);
+  else{cx.save();if(b.flip){const mx=sx+b.w*V.z/2;cx.translate(mx,0);cx.scale(-1,1);cx.translate(-mx,0);}cx.drawImage(b.a.img,sx,sy,b.w*V.z,b.h*V.z);cx.restore();}
+  charTag(it);cx.globalAlpha=1;return;}
+ if(it.k==='p'&&b.a&&b.a.img){cx.imageSmoothingEnabled=!it.o.isPixel;if(b.a.atlas)drawFrame(it,b,sx,sy);else cx.drawImage(b.a.img,sx,sy,b.w*V.z,b.h*V.z);cx.globalAlpha=1;return;}
  const r=rect(b),[rx,ry]=w2s(r.x,r.y),col=it.k==='c'?({bf:'#4fa8ff',dad:'#b57bff',gf:'#ff6fae'}[it.id]||'#9aa5b1'):'#888';
  cx.fillStyle=col+'44';cx.strokeStyle=col;cx.lineWidth=2;cx.setLineDash(it.k==='p'?[6,4]:[]);cx.fillRect(rx,ry,r.w*V.z,r.h*V.z);cx.strokeRect(rx,ry,r.w*V.z,r.h*V.z);cx.setLineDash([]);
- cx.fillStyle='#fff';cx.font='600 13px sans-serif';cx.fillText(it.k==='c'?it.id.toUpperCase():'Missing asset: '+(it.o.assetPath||''),rx+6,ry+18);
+ cx.fillStyle='#fff';cx.font='600 13px sans-serif';cx.fillText(it.k==='c'?it.id.toUpperCase()+charNote(it.id):(b.a&&b.a.bad?'Cannot decode: ':'Missing asset: ')+(it.o.assetPath||''),rx+6,ry+18);
  if(it.k==='c'){const[px,py]=w2s(...(it.o.position||[0,0]));cx.beginPath();cx.arc(px,py,4,0,7);cx.fill();}
  cx.globalAlpha=1;}
 function axes(){const[x,y]=w2s(0,0);cx.strokeStyle=cx.fillStyle='#ff4f9a';cx.lineWidth=1;cx.beginPath();cx.moveTo(x-12,y);cx.lineTo(x+12,y);cx.moveTo(x,y-12);cx.lineTo(x,y+12);cx.stroke();cx.font='11px sans-serif';cx.fillText('0,0',x+6,y-6);}
@@ -297,7 +417,7 @@ cv.addEventListener('pointerdown',e=>{if(cfg.mode)return;cv.focus({preventScroll
  if(e.button===1||e.altKey){drag={m:'pan',sx:p.x,sy:p.y,vx:view.x,vy:view.y};return;}
  const c=cur();
  if(c&&!flags.lock.has(c.key)&&!flags.hid.has(c.key)){const r=rect(bounds(c)),[hx,hy]=w2s(r.x+r.w,r.y+r.h);
-  if(Math.abs(p.x-hx)<=HS()&&Math.abs(p.y-hy)<=HS()){drag={m:'scale',o:c.o,s0:sc(c.o),ax:c.k==='c'?(c.o.position||[0,0])[0]:r.x,w0:r.x+r.w};return;}}
+  if(Math.abs(p.x-hx)<=HS()&&Math.abs(p.y-hy)<=HS()){drag={m:'scale',o:c.o,s0:sc(c.o),ax:c.k==='c'?r.x+r.w/2:r.x,w0:r.x+r.w};return;}}
  const it=hit(p.x,p.y);
  if(it){pick(it);const pos=it.o.position||(it.o.position=[0,0]);drag={m:'move',o:it.o,sx:p.x,sy:p.y,ox:pos[0],oy:pos[1],key:it.key};}
  else{if(sel){sel=null;renderList();renderInsp();}drag={m:'pan',sx:p.x,sy:p.y,vx:view.x,vy:view.y};draw();}});
@@ -319,7 +439,7 @@ cv.addEventListener('contextmenu',e=>e.preventDefault());
 
 /* ---------- Preview (camera bump + Web Audio metronome) ---------- */
 function tick(){if(!ac)return;const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.frequency.value=880;g.gain.setValueAtTime(.08,t);g.gain.exponentialRampToValueAtTime(.0001,t+.06);o.connect(g).connect(ac.destination);o.start();o.stop(t+.07);}
-function danceStep(now){const beat=(now-playT0)/600;for(const o of stage.props){const de=+o.danceEvery;if(!(de>0)||!o.name)continue;const k='p:'+o.name,i=Math.floor(beat/de);if(danceIdx.get(k)!==i){danceIdx.set(k,i);animStart.set(k,now);}}}
+function danceStep(now){const beat=(now-playT0)/600;for(const{key:k,o}of animTargets()){const de=+o.danceEvery;if(!(de>0))continue;const i=Math.floor(beat/de);if(danceIdx.get(k)!==i){danceIdx.set(k,i);animStart.set(k,now);}}}
 function play(){if(cfg.mode)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();}catch{ac=null;toast('Audio unavailable; preview runs silently',1);}
  cfg.mode=true;bump=0;playT0=performance.now();animT0=playT0;animStart.clear();danceIdx.clear();$('#play').disabled=true;$('#stop').disabled=false;let last=performance.now(),acc=1e9;
  const loop=t=>{if(!cfg.mode)return;const dt=t-last;last=t;acc+=dt;if(acc>=600){acc=0;bump=.035;tick();}bump*=Math.exp(-dt/140);danceStep(t);paint();raf=requestAnimationFrame(loop);};raf=requestAnimationFrame(loop);}
@@ -363,6 +483,6 @@ $('#anim').onchange=e=>{cfg.anim=e.target.checked;if(cfg.anim)restartAnim();draw
 
 /* ---------- Boot ---------- */
 new ResizeObserver(resize).observe(vp);
-(async()=>{syncCfgUI();if(innerWidth<=900)$('#app').classList.add('hl','hr');checkGate();resize();
- if(!(await loadProject(true))){renderAssets();sync();fit();$('#save span').textContent='Saved';$('#save').className='ok';clearTimeout(dirtyT);}
+(async()=>{syncCfgUI();syncSaveTip();if(innerWidth<=900)$('#app').classList.add('hl','hr');checkGate();resize();
+ if(!(await loadProject(true))){renderAssets();sync();fit();markClean();}
  if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});})();
